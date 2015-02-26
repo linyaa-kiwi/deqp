@@ -46,6 +46,11 @@ if (NOT DEFINED TCUTIL_PLATFORM_SRCS)
 		if (NOT (DEQP_SUPPORT_EGL OR DEQP_SUPPORT_GLX))
 		  message(FATAL_ERROR "At least one of EGL and GLX must be enabled for X11")
 		endif ()
+	elseif (DE_OS_IS_UNIX AND DEQP_USE_DRM)
+		set(TCUTIL_PLATFORM_SRCS
+			drm/tcuDrmPlatform.hpp
+			drm/tcuDrmPlatform.cpp
+			)
 	elseif (DE_OS_IS_ANDROID)
 		set(TCUTIL_PLATFORM_SRCS
 			android/tcuAndroidExecService.cpp
