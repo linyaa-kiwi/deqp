@@ -1,0 +1,107 @@
+# This JSON file contains regular expressions that match one or more tests.
+# These tests are known to fail for various reasons and are not run.
+# The file can contain one or more blacklist sets, where each set specifies
+# criteria (what platform characteristics the set applies to) and tests.
+# The tests are further broken down into failure categories. If a platform
+# matches all the criteria in a set, then all the tests in the set are
+# blacklisted.
+#
+# The full name of each blacklisted test is recorded in the DEBUG log
+# generated during a run of graphics_dEQP.
+#
+# Lines beginning with '#' are stripped before parsing the JSON.
+
+{
+    "blset-1" : {
+        "criteria" : {
+            "cpu_arch" : ["x86_64", "i386"]
+        },
+        "tests" : {
+            "Test binary crash" : [
+                "dEQP-GLES3.functional.ubo.random.nested_structs_instance_arrays.18",
+                "dEQP-GLES3.functional.ubo.random.nested_structs_instance_arrays.24",
+                "dEQP-GLES3.functional.ubo.random.nested_structs_arrays_instance_arrays.19",
+                "dEQP-GLES3.functional.ubo.random.all_per_block_buffers.49",
+                "dEQP-GLES3.functional.ubo.random.all_shared_buffer.36",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat3x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat3x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat3x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat3x4",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat3x4",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat3x4",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat4x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat4x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat4x2",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat4x3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat4x3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat4x3",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*lowp_mat4",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*mediump_mat4",
+                "dEQP-GLES3.functional.transform_feedback.array_element.*highp_mat4"
+            ],
+            "GPU crash" : [
+                "dEQP-GLES3.functional.fragment_ops.interaction.basic_shader"
+            ],
+            "I/O errors and subsequent test failures" : [
+                "dEQP-GLES3.stress.long_running_shaders.infinite",
+                "dEQP-GLES3.stress.long_running_shaders.long_dynamic",
+                "dEQP-GLES3.stress.long_running_shaders.long_static_do_while_fragment",
+                "dEQP-GLES3.stress.long_running_shaders.long_uniform"
+            ],
+            "Timeout - Watchdog timer expired" : [
+                "dEQP-GLES3.functional.ubo.random.all_per_block_buffers.28",
+                "dEQP-GLES3.functional.ubo.single_struct_array.per_block_buffer.packed_instance_array_vertex",
+                "dEQP-GLES3.functional.ubo.single_struct_array.per_block_buffer.shared_instance_array_both",
+                "dEQP-GLES3.functional.ubo.single_struct_array.per_block_buffer.shared_instance_array_vertex",
+                "dEQP-GLES3.functional.ubo.single_struct_array.per_block_buffer.std140_instance_array_both",
+                "dEQP-GLES3.functional.ubo.single_struct_array.per_block_buffer.std140_instance_array_vertex",
+                "dEQP-GLES3.functional.ubo.single_struct_array.single_buffer.packed_instance_array_vertex",
+                "dEQP-GLES3.functional.ubo.single_struct_array.single_buffer.shared_instance_array_both",
+                "dEQP-GLES3.functional.ubo.single_struct_array.single_buffer.shared_instance_array_vertex",
+                "dEQP-GLES3.functional.ubo.single_struct_array.single_buffer.std140_instance_array_both",
+                "dEQP-GLES3.functional.ubo.single_struct_array.single_buffer.std140_instance_array_vertex",
+                "dEQP-GLES3.functional.uniform_api.random.83",
+                "dEQP-GLES3.stress.long_shaders.100000_operations"
+            ],
+            "NotSupported - Implementation limits execeeded" : [
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*highp_mat3$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*highp_mat3x4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*highp_mat4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*highp_mat4x3$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*lowp_mat3$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*lowp_mat3x4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*lowp_mat4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*lowp_mat4x3$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*mediump_mat3$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*mediump_mat3x4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*mediump_mat4$",
+                "dEQP-GLES3.functional.transform_feedback.array.separate.*mediump_mat4x3$"
+            ],
+            "NotSupported - ASTC not supported" : [
+                "astc"
+            ],
+            "NotSupported - No multisample buffers" : [
+                "multisample"
+            ],
+            "NotSupported - Cannot blit to multisampled framebuffer" : [
+                "dEQP-GLES3.functional.fragment_ops.scissor.framebuffer"
+            ],
+            "NotSupported - Format not supported requires GL_EXT_color_buffer_half_float" : [
+                "dEQP-GLES3.functional.fbo.*rgb16f"
+            ],
+            "NotSupported - MSAA config not supported by this test" : [
+                "dEQP-GLES3.functional.texture.vertex.2d_array.filtering",
+                "dEQP-GLES3.functional.texture.vertex.2d_array.wrap",
+                "dEQP-GLES3.functional.texture.vertex.2d.filtering.linear"
+            ],
+            "NotSupported - reason unknown" : [
+                "dEQP-GLES3.functional.fbo.msaa.8_samples.rgba32f",
+                "dEQP-GLES3.functional.shader_api.program_binary.binary_persistence",
+                "dEQP-GLES3.functional.shader_api.program_binary.simple"
+            ]
+        }
+    }
+}
