@@ -101,6 +101,14 @@
                 "dEQP-GLES3.functional.fbo.msaa.8_samples.rgba32f",
                 "dEQP-GLES3.functional.shader_api.program_binary.binary_persistence",
                 "dEQP-GLES3.functional.shader_api.program_binary.simple"
+            ],
+            "Fail (Shader compilation failed)" : [
+                "dEQP-GLES2.performance.compiler.optimization.constant_propagation.built_in_functions_fragment",
+                "dEQP-GLES2.performance.compiler.optimization.constant_propagation.built_in_functions_vertex",
+                "dEQP-GLES2.performance.compiler.optimization.constant_propagation.struct_fragment",
+                "dEQP-GLES2.performance.compiler.optimization.constant_propagation.struct_vertex",
+                "dEQP-GLES2.performance.compiler.optimization.dead_code_elimination.dead_branch_complex_fragment",
+                "dEQP-GLES2.performance.compiler.optimization.dead_code_elimination.dead_branch_complex_vertex"
             ]
         }
     }
