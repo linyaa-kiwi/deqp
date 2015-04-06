@@ -5,6 +5,8 @@
 import json
 import logging
 import os
+import shutil
+import tempfile
 import re
 import xml.etree.cElementTree as et
 from autotest_lib.client.bin import test, utils
@@ -28,7 +30,7 @@ class graphics_dEQP(test.test):
     }
 
     def initialize(self):
-        self._services = service_stopper.ServiceStopper(['ui', 'powerd'])
+        self._services = service_stopper.ServiceStopper(["ui", "powerd"])
 
 
     def cleanup(self):
@@ -114,10 +116,11 @@ class graphics_dEQP(test.test):
         # Must be in the exe directory when running the exe for it to
         # find it's test data files!
         os.chdir(base_dir)
-        result = utils.run("%s --deqp-runmode=txt-caselist --deqp-surface-type=fbo" % exe,
+        result = utils.run("%s --deqp-runmode=txt-caselist "
+                           "--deqp-surface-type=fbo" % exe,
                            stderr_is_expected=False,
-                           stdout_tee = utils.TEE_TO_LOGS,
-                           stderr_tee = utils.TEE_TO_LOGS)
+                           stdout_tee=utils.TEE_TO_LOGS,
+                           stderr_tee=utils.TEE_TO_LOGS)
         os.chdir(initial_dir)
 
         pattern = "Dumping all test case names in '.*' to file " \
@@ -134,7 +137,8 @@ class graphics_dEQP(test.test):
                 if match is not None:
                     testcase = match.group("testcase").strip()
                     if testcase.startswith(test_filter):
-                        if any(bl_regex.search(testcase) for bl_regex in self._blacklist):
+                        if any(bl_regex.search(testcase) for bl_regex in
+                               self._blacklist):
                             logging.info("Blacklisted: " + testcase)
                             continue
                         yield match.group("testcase")
@@ -162,7 +166,7 @@ class graphics_dEQP(test.test):
                     if xml_start:
                         xml += line
                     elif line.startswith("#beginTestCaseResult"):
-                        xml_start = True                		
+                        xml_start = True
             if xml_complete:
                 root = et.fromstring(xml)
                 result = root.find("Result").get("StatusCode").strip()
@@ -173,15 +177,15 @@ class graphics_dEQP(test.test):
         return result
 
 
-    def run_once(self, opts = []):
+    def run_once(self, opts=[]):
         test_results = {}
         test_failures = 0
         test_count = 0
 
         options = dict(
-            filter = "",
-            timeout = 10 * 60, # 10 minutes max per test
-            ignore_blacklist = "False"
+            filter="",
+            timeout=10 * 60,  # 10 minutes max per test
+            ignore_blacklist="False"
         )
         options.update(utils.args_to_dict(opts))
         logging.info("Test Options: %s", options)
@@ -204,14 +208,17 @@ class graphics_dEQP(test.test):
         if not ignore_blacklist:
             self._get_blacklist()
 
-        log_path = os.path.join(self.outputdir, "deqp-%s-logs" % module)
+        # The tests produced too many tiny logs for uploading to GS.
+        log_path = os.path.join(tempfile.gettempdir(), "deqp-%s-logs" % module)
+        shutil.rmtree(log_path, ignore_errors=True)
+        os.mkdir(log_path)
         mod_path = os.path.join(self.DEQP_BASEDIR, "modules", module)
         mod_exe = os.path.join(mod_path, "deqp-%s" % module)
 
+        # TODO(ihf): Investigate why frecon needs to be killed. ALso restart
+        # after test.
         self._services.stop_services()
         utils.run('pkill frecon', ignore_status=True)
-
-        os.mkdir(log_path)
 
         # Must be in the mod_exe directory when running the mod_exe for it
         # to find it's test data files!
@@ -227,11 +234,11 @@ class graphics_dEQP(test.test):
                        "--deqp-watchdog=enable "
                        % (mod_exe, test_case, log_file))
             try:
-                utils.run(command, timeout = timeout,
+                utils.run(command, timeout=timeout,
                           stderr_is_expected=False,
                           ignore_status=True,
-                          stdout_tee = utils.TEE_TO_LOGS,
-                          stderr_tee = utils.TEE_TO_LOGS)
+                          stdout_tee=utils.TEE_TO_LOGS,
+                          stderr_tee=utils.TEE_TO_LOGS)
                 result = self._parse_test_result(log_file)
             except error.CmdTimeoutError:
                 result = "TestTimeout"
@@ -247,9 +254,9 @@ class graphics_dEQP(test.test):
         self.write_perf_keyval(test_results)
 
         if test_failures:
-            raise error.TestFail("%d/%d tests failed." \
+            raise error.TestFail("%d/%d tests failed."
                                  % (test_failures, test_count))
 
         if test_count == 0:
-            raise error.TestError("No test cases found for filter:%s!" \
+            raise error.TestError("No test cases found for filter:%s!"
                                   % (test_filter))
