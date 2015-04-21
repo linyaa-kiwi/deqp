@@ -20,6 +20,9 @@ class graphics_dEQP(test.test):
     version = 1
     _services = None
     _blacklist = []
+    _gpu_type = None
+    _cpu_type = None
+    _board = None
 
     DEQP_BASEDIR = "/usr/local/deqp"
     DEQP_MODULES = {
@@ -30,6 +33,9 @@ class graphics_dEQP(test.test):
     }
 
     def initialize(self):
+        self._gpu_type = utils.get_gpu_family()
+        self._cpu_type = utils.get_cpu_soc_family()
+        self._board = utils.get_board()
         self._services = service_stopper.ServiceStopper(["ui", "powerd"])
 
 
@@ -196,6 +202,12 @@ class graphics_dEQP(test.test):
 
         if not test_filter:
             raise error.TestError("No dEQP test filter specified")
+
+        # Some information to help postprocess logs into blacklists later.
+        logging.info('ChromeOS BOARD = %s', self._board)
+        logging.info('ChromeOS CPU family = %s', self._cpu_type)
+        logging.info('ChromeOS GPU family = %s', self._gpu_type)
+        logging.info('dEQP test filter = %s', test_filter)
 
         # Determine module from filter
         test_prefix = test_filter.split('.')[0]
