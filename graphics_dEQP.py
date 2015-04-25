@@ -217,8 +217,8 @@ class graphics_dEQP(test.test):
             raise error.TestError("Invalid test filter: %s" % test_filter)
 
         # Read blacklist file
-        if not ignore_blacklist:
-            self._get_blacklist()
+        #if not ignore_blacklist:
+        #    self._get_blacklist()
 
         # The tests produced too many tiny logs for uploading to GS.
         log_path = os.path.join(tempfile.gettempdir(), "deqp-%s-logs" % module)
