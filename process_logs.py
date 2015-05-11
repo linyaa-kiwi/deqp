@@ -12,8 +12,8 @@ import re
 import subprocess
 
 _EXPECTATIONS_DIR = 'expectations'
-_RESULTID_WILDCARD = '314*'
-_AUTOTEST_RESULT_PATH = 'gs://chromeos-autotest-results/' + _RESULTID_WILDCARD + '-chromeos-test/chromeos*/graphics_dEQP/debug/graphics_dEQP.INFO'
+_RESULTID_WILDCARD = '3209576*'
+_AUTOTEST_RESULT_TEMPLATE = 'gs://chromeos-autotest-results/%s-chromeos-test/chromeos*/graphics_dEQP/debug/graphics_dEQP.INFO'
 
 _BOARD_REGEX = re.compile(r'ChromeOS BOARD = (.+)')
 _CPU_FAMILY_REGEX = re.compile(r'ChromeOS CPU family = (.+)')
@@ -185,7 +185,9 @@ def load_log(name):
     lines = f.read().splitlines()
   text = ''
   for line in lines:
-    if not '[stderr]' in line:
+    if ('dEQP test filter =' in line or 'ChromeOS BOARD = ' in line or
+        'ChromeOS CPU family =' in line or 'ChromeOS GPU family =' in line or
+        'TestCase: ' in line or 'Result: ' in line):
       text += line + '\n'
   # TODO(ihf): Warn about or reject log files missing the end marker.
   return text
@@ -212,6 +214,10 @@ def process_logs(logs):
 # feel free to process them incrementally.
 execute(['rm', '-rf', _EXPECTATIONS_DIR])
 # You can choose to download logs manually or search for them on GS.
-#logs = get_logs_from_gs(_AUTOTEST_RESULT_PATH)
+ids = [_RESULTID_WILDCARD]
+for id in ids:
+  gs_path = _AUTOTEST_RESULT_TEMPLATE % id
+  logs = get_logs_from_gs(gs_path)
+
 logs = get_local_logs()
 process_logs(logs)
