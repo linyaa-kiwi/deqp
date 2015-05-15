@@ -166,7 +166,7 @@ def merge_expectation_list(expectation_path, tests):
   if os.access(expectation_json, os.R_OK):
     status_dict = load_expectations(expectation_json)
   else:
-    print 'IHF: could not load ', expectation_json
+    print 'Could not load ', expectation_json
   for test, result in tests:
     if status_dict.has_key(result):
       new_set = status_dict[result]
