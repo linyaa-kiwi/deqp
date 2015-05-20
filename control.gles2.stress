@@ -8,8 +8,8 @@ PURPOSE = 'Run the drawElements Quality Program test suite'
 CRITERIA = """
 All of the individual tests must pass.
 """
-ATTRIBUTES = "suite:graphics_per-day"
-SUITE = 'graphics_per-day'
+ATTRIBUTES = "suite:graphics_per-day, suite:graphics_system, suite:bvt-perbuild"
+SUITE = 'graphics_per-day, graphics_system, bvt-perbuild'
 TIME = 'LENGTHY'
 TEST_CATEGORY = 'Stress'
 TEST_CLASS = 'graphics'
