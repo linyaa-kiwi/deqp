@@ -367,7 +367,7 @@ class graphics_dEQP(test.test):
         test_failures = 0
         for result in test_results:
             test_count += test_results[result]
-            if result.lower() not in ['pass', 'notsupported']:
+            if result.lower() not in ['pass', 'notsupported', 'internalerror']:
                 test_failures += test_results[result]
         # The text "Completed all tests." is used by the process_log.py script
         # and should always appear at the end of a completed test run.
