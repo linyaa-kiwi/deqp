@@ -43,6 +43,9 @@ set(DEQP_SUPPORT_OPENGL		OFF)			# Is OpenGL supported on platform
 
 set(DEQP_PLATFORM_COPY_LIBRARIES	)		# Libraries / binaries that need to be copied to binary directory
 
+set(DEQP_INSTALL_OPTDIR "opt/deqp" CACHE STRING
+	"Path to install dEQP into, relative to CMAKE_INSTALL_PREFIX.")
+
 # Delibs include directories
 include_directories(
 	${DELIBS_DIR}/debase
@@ -273,6 +276,14 @@ macro (add_deqp_module MODULE_NAME SRCS LIBS ENTRY)
 		add_executable(${MODULE_NAME} ${CMAKE_SOURCE_DIR}/framework/platform/tcuMain.cpp ${ENTRY} ${SRCS})
 		target_link_libraries(${MODULE_NAME} tcutil-platform ${LIBS})
 		target_copy_files(${MODULE_NAME} platform-libs-${MODULE_NAME} "${DEQP_PLATFORM_COPY_LIBRARIES}")
+
+        string(REPLACE
+               ${CMAKE_BINARY_DIR} # pattern
+               ${DEQP_INSTALL_OPTDIR} # replacement
+               DEQP_MODULE_INSTALL_DIR # output var
+               ${CMAKE_CURRENT_BINARY_DIR}) # input string
+        install(TARGETS ${MODULE_NAME}
+                DESTINATION "${DEQP_MODULE_INSTALL_DIR}")
 	endif ()
 
 	# Data file target
@@ -284,6 +295,15 @@ endmacro (add_deqp_module)
 macro (add_data_dir MODULE_NAME SRC_DIR DST_DIR)
 	if (DE_OS_IS_WIN32 OR DE_OS_IS_UNIX OR DE_OS_IS_OSX)
 		add_custom_command(TARGET ${MODULE_NAME}-data POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_DIR} ${CMAKE_CURRENT_BINARY_DIR}/${DST_DIR})
+
+        string(REPLACE
+              ${CMAKE_BINARY_DIR} # pattern
+              ${DEQP_INSTALL_OPTDIR} # replacement
+              INSTALL_DST_DIR # output var
+              ${CMAKE_CURRENT_BINARY_DIR}/${DST_DIR}) # input string
+        get_filename_component(INSTALL_DST_DIR ${INSTALL_DST_DIR} DIRECTORY)
+        install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_DIR}
+                DESTINATION ${INSTALL_DST_DIR})
 
 	elseif (DE_OS_IS_ANDROID)
 		add_custom_command(TARGET ${MODULE_NAME}-data POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_DIR} ${CMAKE_BINARY_DIR}/assets/${DST_DIR})
@@ -297,6 +317,9 @@ endmacro (add_data_dir)
 macro (add_data_file MODULE_NAME SRC_FILE DST_FILE)
 	if (DE_OS_IS_WIN32 OR DE_OS_IS_UNIX OR DE_OS_IS_OSX)
 		add_custom_command(TARGET ${MODULE_NAME}-data POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${DST_FILE})
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}
+                RENAME ${DST_FILE}
+                DESTINATION ${DEQP_MODULE_INSTALL_DIR})
 
 	elseif (DE_OS_IS_ANDROID)
 		add_custom_command(TARGET ${MODULE_NAME}-data POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE} ${CMAKE_BINARY_DIR}/assets/${DST_FILE})
