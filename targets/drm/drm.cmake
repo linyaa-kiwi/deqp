@@ -43,5 +43,5 @@ include_directories(${GLES2_INCLUDE_PATH} ${GLES3_INCLUDE_PATH}
                     ${KMS_INCLUDE_DIRS} ${DRM_INCLUDE_DIRS})
 
 set(DEQP_PLATFORM_LIBRARIES ${DEQP_GLES2_LIBRARIES} ${DEQP_GLES3_LIBRARIES}
-                            ${DEQP_EGL_LIBRARIES} ${GBM_LIBRARIES}
-                            ${KMS_LIBRARIES} ${DRM_LIBRARIES})
+                            ${DEQP_EGL_LIBRARIES} ${GBM_LDFLAGS}
+                            ${KMS_LDFLAGS} ${DRM_LDFLAGS})
