@@ -47,13 +47,6 @@
 		/* conflict, print a nice error messages for the most common misconfigs,
 		 * GCC and Clang, and a generic for other conflicts.
 		 */
-#		if (DE_DETAIL_DETECTED_COMPILER == DE_COMPILER_CLANG) && (DE_COMPILER == DE_COMPILER_GCC)
-#			error Detected compiler is Clang, but got DE_COMPILER == DE_COMPILER_GCC
-#		elif (DE_DETAIL_DETECTED_COMPILER == DE_COMPILER_GCC) && (DE_COMPILER == DE_COMPILER_CLANG)
-#			error Detected compiler is GCC, but got DE_COMPILER == DE_COMPILER_CLANG
-#		else
-#			error Detected compiler does not match the supplied compiler.
-#		endif
 #	endif
 	/* Clear autodetect vars. */
 #	if defined(DE_DETAIL_DETECTED_COMPILER)
