@@ -37,8 +37,9 @@
 #include "glwInitES20Direct.hpp"
 #include "glwInitES30Direct.hpp"
 #include "glwInitFunctions.hpp"
+#include "tcuPixelFormat.hpp"
 #include "tcuPlatform.hpp"
-
+#include "tcuRenderTarget.hpp"
 
 #include <EGL/egl.h>
 
@@ -152,6 +153,7 @@ private:
 	eglw::EGLContext		m_eglContext;
 	de::DynamicLibrary*		m_glLibrary;
 	glw::Functions			m_glFunctions;
+	tcu::RenderTarget		m_renderTarget;
 };
 
 Platform::Platform(void)
@@ -173,15 +175,30 @@ EglRenderContext::EglRenderContext(const glu::RenderConfig& config, const tcu::C
 	, m_contextType(config.type)
 	, m_eglDisplay(EGL_NO_DISPLAY)
 	, m_eglContext(EGL_NO_CONTEXT)
+	, m_renderTarget(
+			config.width,
+			config.height,
+			tcu::PixelFormat(
+					config.redBits,
+					config.greenBits,
+					config.blueBits,
+					config.alphaBits),
+			config.depthBits,
+			config.stencilBits,
+			config.numSamples)
+
 {
-	vector<eglw::EGLint>	attribs;
-	vector<eglw::EGLint>	config_attribs;
+	vector<eglw::EGLint>	context_attribs;
+	vector<eglw::EGLint>	frame_buffer_attribs;
+	vector<eglw::EGLint>	surface_attribs;
+
 	const glu::ContextType&	contextType = config.type;
 	eglw::EGLint		eglMajorVersion;
 	eglw::EGLint		eglMinorVersion;
 	eglw::EGLint		flags = 0;
 	eglw::EGLint		num_configs;
 	eglw::EGLConfig		egl_config;
+	eglw::EGLSurface	egl_surface;
 
 	(void) cmdLine;
 
@@ -192,11 +209,33 @@ EglRenderContext::EglRenderContext(const glu::RenderConfig& config, const tcu::C
 
 	EGLU_CHECK_CALL(m_egl, initialize(m_eglDisplay, &eglMajorVersion, &eglMinorVersion));
 
+	frame_buffer_attribs.push_back(EGL_RENDERABLE_TYPE);
+	switch(contextType.getMajorVersion())
+	{
+		case 3:
+			frame_buffer_attribs.push_back(EGL_OPENGL_ES3_BIT);
+			break;
+		case 2:
+			frame_buffer_attribs.push_back(EGL_OPENGL_ES2_BIT);
+			break;
+		default:
+			frame_buffer_attribs.push_back(EGL_OPENGL_ES_BIT);
+	}
+
+	frame_buffer_attribs.push_back(EGL_SURFACE_TYPE);
 	switch (config.surfaceType)
 	{
 		case glu::RenderConfig::SURFACETYPE_DONT_CARE:
-		case glu::RenderConfig::SURFACETYPE_OFFSCREEN_GENERIC:
+			frame_buffer_attribs.push_back(EGL_DONT_CARE);
+			break;
 		case glu::RenderConfig::SURFACETYPE_OFFSCREEN_NATIVE:
+			break;
+		case glu::RenderConfig::SURFACETYPE_OFFSCREEN_GENERIC:
+			frame_buffer_attribs.push_back(EGL_PBUFFER_BIT);
+			surface_attribs.push_back(EGL_WIDTH);
+			surface_attribs.push_back(config.width);
+			surface_attribs.push_back(EGL_HEIGHT);
+			surface_attribs.push_back(config.height);
 			break;
 		case glu::RenderConfig::SURFACETYPE_WINDOW:
 			throw tcu::NotSupportedError("surfaceless platform does not support --deqp-surface-type=window");
@@ -204,28 +243,48 @@ EglRenderContext::EglRenderContext(const glu::RenderConfig& config, const tcu::C
 			TCU_CHECK_INTERNAL(false);
 	}
 
-	config_attribs.push_back(EGL_RED_SIZE);
-	config_attribs.push_back(1);
-	config_attribs.push_back(EGL_GREEN_SIZE);
-	config_attribs.push_back(1);
-	config_attribs.push_back(EGL_BLUE_SIZE);
-	config_attribs.push_back(1);
-	config_attribs.push_back(EGL_RENDERABLE_TYPE);
-	config_attribs.push_back(EGL_OPENGL_ES2_BIT);
-	config_attribs.push_back(EGL_SURFACE_TYPE);
-	config_attribs.push_back(EGL_DONT_CARE);
-	config_attribs.push_back(EGL_NONE);
+	surface_attribs.push_back(EGL_NONE);
 
-	if (!eglChooseConfig(m_eglDisplay, &config_attribs[0], NULL, 0, &num_configs))
+	frame_buffer_attribs.push_back(EGL_RED_SIZE);
+	frame_buffer_attribs.push_back(config.redBits);
+
+	frame_buffer_attribs.push_back(EGL_GREEN_SIZE);
+	frame_buffer_attribs.push_back(config.greenBits);
+
+	frame_buffer_attribs.push_back(EGL_BLUE_SIZE);
+	frame_buffer_attribs.push_back(config.blueBits);
+
+	frame_buffer_attribs.push_back(EGL_ALPHA_SIZE);
+	frame_buffer_attribs.push_back(config.alphaBits);
+
+	frame_buffer_attribs.push_back(EGL_DEPTH_SIZE);
+	frame_buffer_attribs.push_back(config.depthBits);
+
+	frame_buffer_attribs.push_back(EGL_STENCIL_SIZE);
+	frame_buffer_attribs.push_back(config.stencilBits);
+
+	frame_buffer_attribs.push_back(EGL_NONE);
+
+	if (!eglChooseConfig(m_eglDisplay, &frame_buffer_attribs[0], NULL, 0, &num_configs))
 		throw tcu::ResourceError("surfaceless couldn't find any config");
 
-	if (!eglChooseConfig(m_eglDisplay, &config_attribs[0], &egl_config, 1, &num_configs))
+	if (!eglChooseConfig(m_eglDisplay, &frame_buffer_attribs[0], &egl_config, 1, &num_configs))
 		throw tcu::ResourceError("surfaceless couldn't find any config");
 
-	attribs.push_back(EGL_CONTEXT_MAJOR_VERSION_KHR);
-	attribs.push_back(contextType.getMajorVersion());
-	attribs.push_back(EGL_CONTEXT_MINOR_VERSION_KHR);
-	attribs.push_back(contextType.getMinorVersion());
+	switch (config.surfaceType)
+	{
+		case glu::RenderConfig::SURFACETYPE_DONT_CARE:
+			egl_surface = EGL_NO_SURFACE;
+			break;
+		case glu::RenderConfig::SURFACETYPE_OFFSCREEN_GENERIC:
+			egl_surface = eglCreatePbufferSurface(m_eglDisplay, egl_config, &surface_attribs[0]);
+			break;
+	}
+
+	context_attribs.push_back(EGL_CONTEXT_MAJOR_VERSION_KHR);
+	context_attribs.push_back(contextType.getMajorVersion());
+	context_attribs.push_back(EGL_CONTEXT_MINOR_VERSION_KHR);
+	context_attribs.push_back(contextType.getMinorVersion());
 
 	switch (contextType.getProfile())
 	{
@@ -234,13 +293,13 @@ EglRenderContext::EglRenderContext(const glu::RenderConfig& config, const tcu::C
 			break;
 		case glu::PROFILE_CORE:
 			EGLU_CHECK_CALL(m_egl, bindAPI(EGL_OPENGL_API));
-			attribs.push_back(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR);
-			attribs.push_back(EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR);
+			context_attribs.push_back(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR);
+			context_attribs.push_back(EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR);
 			break;
 		case glu::PROFILE_COMPATIBILITY:
 			EGLU_CHECK_CALL(m_egl, bindAPI(EGL_OPENGL_API));
-			attribs.push_back(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR);
-			attribs.push_back(EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT_KHR);
+			context_attribs.push_back(EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR);
+			context_attribs.push_back(EGL_CONTEXT_OPENGL_COMPATIBILITY_PROFILE_BIT_KHR);
 			break;
 		case glu::PROFILE_LAST:
 			TCU_CHECK_INTERNAL(false);
@@ -255,17 +314,17 @@ EglRenderContext::EglRenderContext(const glu::RenderConfig& config, const tcu::C
 	if ((contextType.getFlags() & glu::CONTEXT_FORWARD_COMPATIBLE) != 0)
 		flags |= EGL_CONTEXT_OPENGL_FORWARD_COMPATIBLE_BIT_KHR;
 
-	attribs.push_back(EGL_CONTEXT_FLAGS_KHR);
-	attribs.push_back(flags);
+	context_attribs.push_back(EGL_CONTEXT_FLAGS_KHR);
+	context_attribs.push_back(flags);
 
-	attribs.push_back(EGL_NONE);
+	context_attribs.push_back(EGL_NONE);
 
-	m_eglContext = m_egl.createContext(m_eglDisplay, egl_config, EGL_NO_CONTEXT, &attribs[0]);
+	m_eglContext = m_egl.createContext(m_eglDisplay, egl_config, EGL_NO_CONTEXT, &context_attribs[0]);
 	EGLU_CHECK_MSG(m_egl, "eglCreateContext()");
 	if (!m_eglContext)
 		throw tcu::ResourceError("eglCreateContext failed");
 
-	EGLU_CHECK_CALL(m_egl, makeCurrent(m_eglDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, m_eglContext));
+	EGLU_CHECK_CALL(m_egl, makeCurrent(m_eglDisplay, egl_surface, egl_surface, m_eglContext));
 
 	if ((eglMajorVersion == 1 && eglMinorVersion >= 5) ||
 		isEGLExtensionSupported(m_egl, m_eglDisplay, "EGL_KHR_get_all_proc_addresses") ||
@@ -336,7 +395,7 @@ EglRenderContext::~EglRenderContext(void)
 
 const tcu::RenderTarget& EglRenderContext::getRenderTarget(void) const
 {
-	throw tcu::InternalError("surfaceless platform cannot create EGL surfaces");
+	return m_renderTarget;
 }
 
 void EglRenderContext::postIterate(void)

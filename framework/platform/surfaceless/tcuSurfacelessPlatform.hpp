@@ -1,5 +1,5 @@
-#ifndef _TCUDRMPLATFORM_HPP
-#define _TCUDRMPLATFORM_HPP
+#ifndef _TCU_SURFACELESS_PLATFORM_HPP
+#define _TCU_SURFACELESS_PLATFORM_HPP
 
 /*-------------------------------------------------------------------------
  * drawElements Quality Program Tester Core
