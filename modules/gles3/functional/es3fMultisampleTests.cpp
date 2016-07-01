@@ -219,6 +219,8 @@ protected:
 	void				randomizeViewport		(void);
 	void				readImage				(tcu::Surface& dst) const;
 
+	IVec2				getRenderTargetSize		(void) const 				{ return IVec2(m_renderWidth, m_renderHeight); }
+
 	int					m_numSamples;
 
 	int					m_viewportSize;
@@ -627,8 +629,18 @@ NumSamplesCase::IterateResult NumSamplesCase::iterate (void)
 
 		if (m_currentIteration >= m_maxNumIterations)
 		{
+			const IVec2 targetSize 			= getRenderTargetSize();
+			const int 	detectedNumSamples 	= (int)m_detectedColors.size() - 1; // One color is the background
+
 			log << TestLog::Message << "Failure: Number of distinct colors detected is lower than sample count+1" << TestLog::EndMessage;
-			m_context.getTestContext().setTestResult(QP_TEST_RESULT_FAIL, "Failed");
+
+			// For high resolution render targets the lack of samples is not likely detected by a human
+			// and for GLES 3.0 the application cannot observe the sample count directly. So, it only
+			// warrants a quality warning.
+			if ((targetSize.x() >= 2048 || targetSize.y() >= 2048) && (detectedNumSamples >= (m_numSamples/2)))
+				m_context.getTestContext().setTestResult(QP_TEST_RESULT_QUALITY_WARNING, "Measured sample count below the advertised count");
+			else
+				m_context.getTestContext().setTestResult(QP_TEST_RESULT_FAIL, "Failed");
 			return STOP;
 		}
 		else
@@ -1051,6 +1063,9 @@ void SampleDepthCase::init (void)
 {
 	TestLog& log = m_testCtx.getLog();
 
+	if (m_context.getRenderTarget().getDepthBits() == 0)
+		TCU_THROW(NotSupportedError, "Test requires depth buffer");
+
 	MultisampleCase::init();
 
 	GLU_CHECK_CALL(glEnable(GL_DEPTH_TEST));
@@ -1096,12 +1111,21 @@ public:
 						SampleStencilCase		(Context& context, const char* name, const char* description, int numFboSamples = 0);
 						~SampleStencilCase		(void) {}
 
+	void				init					(void);
 	IterateResult		iterate					(void);
 };
 
 SampleStencilCase::SampleStencilCase (Context& context, const char* name, const char* description, int numFboSamples)
 	: MultisampleCase (context, name, description, 256, numFboSamples >= 0 ? FboParams(numFboSamples, false, true) : FboParams())
 {
+}
+
+void SampleStencilCase::init (void)
+{
+	if (m_context.getRenderTarget().getStencilBits() == 0)
+		TCU_THROW(NotSupportedError, "Test requires stencil buffer");
+
+	MultisampleCase::init();
 }
 
 SampleStencilCase::IterateResult SampleStencilCase::iterate (void)
