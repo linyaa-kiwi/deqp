@@ -29,9 +29,9 @@ lists of expected results.
 Chad's Fork
 -----------
 Chad's fork contains the Chrome OS patchset and some minor changes for Linux
-development. The main branch is `chadv`.
+development.
 
-- `git clone -b chadv git://github.com/chadversary/deqp`
+- `git clone -b master git://github.com/chadversary/deqp`
 - [Homepage](https://github.com/chadversary/deqp/blob/chadv/README.chadv.markdown)
 
 For build and installation instructions, see INSTALL.chadv.makrdown.
