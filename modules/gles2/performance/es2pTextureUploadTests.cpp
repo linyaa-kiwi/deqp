@@ -261,7 +261,7 @@ void TextureUploadCase::logResults (void)
 	vector<deUint64>::const_iterator middle	= first + (last - first) / 2;
 
 	deUint64 medianFrameTime			=  *middle;
-	double medianMTexelsPerSeconds		= (double)(m_texSize*m_texSize*measureState.numDrawCalls) / medianFrameTime;
+	double medianMTexelsPerSeconds		= (double)(m_texSize*m_texSize*measureState.numDrawCalls) / (double)medianFrameTime;
 	double medianTexelDrawDurationNs	= (double)medianFrameTime * 1000.0 / (double)(m_texSize*m_texSize*measureState.numDrawCalls);
 
 	deUint64	totalTime			= measureState.getTotalTime();
@@ -534,7 +534,7 @@ void TextureUploadTests::init (void)
 	};
 
 #define FOR_EACH(ITERATOR, ARRAY, BODY)	\
-	for (int ITERATOR = 0; ITERATOR < DE_LENGTH_OF_ARRAY(ARRAY); ITERATOR++)	\
+	for (int (ITERATOR) = 0; (ITERATOR) < DE_LENGTH_OF_ARRAY(ARRAY); (ITERATOR)++)	\
 		BODY
 
 	FOR_EACH(uploadFunc,	 uploadFunctions,

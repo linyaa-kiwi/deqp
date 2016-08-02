@@ -1,7 +1,7 @@
 /* WARNING: This is auto-generated file. Do not modify, since changes will
  * be lost! Modify the generating script instead.
  *
- * Generated from Khronos EGL API description (egl.xml) revision 31042.
+ * Generated from Khronos EGL API description (egl.xml) revision 32725.
  */
 EGLBoolean									bindAPI							(EGLenum api) const;
 EGLBoolean									bindTexImage					(EGLDisplay dpy, EGLSurface surface, EGLint buffer) const;
@@ -49,9 +49,11 @@ const char *								queryString						(EGLDisplay dpy, EGLint name) const;
 EGLBoolean									querySurface					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value) const;
 EGLBoolean									releaseTexImage					(EGLDisplay dpy, EGLSurface surface, EGLint buffer) const;
 EGLBoolean									releaseThread					(void) const;
+EGLBoolean									setDamageRegionKHR				(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects) const;
 EGLBoolean									signalSyncKHR					(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode) const;
 EGLBoolean									surfaceAttrib					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint value) const;
 EGLBoolean									swapBuffers						(EGLDisplay dpy, EGLSurface surface) const;
+EGLBoolean									swapBuffersWithDamageKHR		(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects) const;
 EGLBoolean									swapInterval					(EGLDisplay dpy, EGLint interval) const;
 EGLBoolean									terminate						(EGLDisplay dpy) const;
 EGLBoolean									unlockSurfaceKHR				(EGLDisplay dpy, EGLSurface surface) const;

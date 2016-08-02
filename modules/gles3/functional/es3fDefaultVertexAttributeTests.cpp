@@ -94,7 +94,7 @@ public:
 		};																				\
 		enum																			\
 		{																				\
-			COMPONENTS = COMPS															\
+			COMPONENTS = (COMPS)														\
 		};																				\
 		typedef TYPE Type;																\
 																						\
@@ -128,7 +128,7 @@ public:
 		};																				\
 		enum																			\
 		{																				\
-			COMPONENTS = COMPS															\
+			COMPONENTS = (COMPS)														\
 		};																				\
 		typedef TYPE Type;																\
 																						\
@@ -162,7 +162,7 @@ public:
 		};																				\
 		enum																			\
 		{																				\
-			COMPONENTS = COMPS															\
+			COMPONENTS = (COMPS)														\
 		};																				\
 		typedef TYPE Type;																\
 																						\
@@ -196,7 +196,7 @@ public:
 		};																				\
 		enum																			\
 		{																				\
-			COMPONENTS = COMPS															\
+			COMPONENTS = (COMPS)														\
 		};																				\
 		typedef TYPE Type;																\
 																						\
@@ -506,7 +506,7 @@ bool AttributeCase::verifyUnicoloredBuffer (const tcu::Surface& scene, const tcu
 	tcu::RGBA		exampleColor;
 	tcu::IVec2		examplePos;
 
-	tcu::clear(errorMask.getAccess(), tcu::RGBA::green.toIVec());
+	tcu::clear(errorMask.getAccess(), tcu::RGBA::green().toIVec());
 
 	m_testCtx.getLog() << tcu::TestLog::Message << "Verifying rendered image. Expecting color " << refColor << ", threshold " << colorThreshold << tcu::TestLog::EndMessage;
 
@@ -527,7 +527,7 @@ bool AttributeCase::verifyUnicoloredBuffer (const tcu::Surface& scene, const tcu
 			}
 
 			error = true;
-			errorMask.setPixel(x, y, tcu::RGBA::red);
+			errorMask.setPixel(x, y, tcu::RGBA::red());
 		}
 	}
 

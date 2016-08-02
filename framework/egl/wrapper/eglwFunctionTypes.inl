@@ -1,7 +1,7 @@
 /* WARNING: This is auto-generated file. Do not modify, since changes will
  * be lost! Modify the generating script instead.
  *
- * Generated from Khronos EGL API description (egl.xml) revision 31042.
+ * Generated from Khronos EGL API description (egl.xml) revision 32725.
  */
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglBindAPIFunc)							(EGLenum api);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglBindTexImageFunc)					(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
@@ -49,9 +49,11 @@ typedef EGLW_APICALL const char *								(EGLW_APIENTRY* eglQueryStringFunc)				
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglQuerySurfaceFunc)					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglReleaseTexImageFunc)					(EGLDisplay dpy, EGLSurface surface, EGLint buffer);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglReleaseThreadFunc)					(void);
+typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSetDamageRegionKHRFunc)				(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSignalSyncKHRFunc)					(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSurfaceAttribFunc)					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint value);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSwapBuffersFunc)						(EGLDisplay dpy, EGLSurface surface);
+typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSwapBuffersWithDamageKHRFunc)		(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglSwapIntervalFunc)					(EGLDisplay dpy, EGLint interval);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglTerminateFunc)						(EGLDisplay dpy);
 typedef EGLW_APICALL EGLBoolean									(EGLW_APIENTRY* eglUnlockSurfaceKHRFunc)				(EGLDisplay dpy, EGLSurface surface);

@@ -28,7 +28,7 @@
 #include "tcuStringTemplate.hpp"
 #include "tcuTextureUtil.hpp"
 #include "glsStateQueryUtil.hpp"
-#include "glsRasterizationTestUtil.hpp"
+#include "tcuRasterizationVerifier.hpp"
 #include "gluRenderContext.hpp"
 #include "gluCallLogWrapper.hpp"
 #include "gluObjectWrapper.hpp"
@@ -42,8 +42,6 @@
 #include "deRandom.hpp"
 
 using namespace glw;
-using deqp::gls::RasterizationTestUtil::RasterizationArguments;
-using deqp::gls::RasterizationTestUtil::TriangleSceneSpec;
 
 namespace deqp
 {
@@ -53,6 +51,9 @@ namespace Functional
 {
 namespace
 {
+
+using tcu::RasterizationArguments;
+using tcu::TriangleSceneSpec;
 
 static std::string sampleMaskToString (const std::vector<deUint32>& bitfield, int numBits)
 {
@@ -456,7 +457,7 @@ bool SamplePosRasterizationTest::testMultisampleTexture (int sampleNdx)
 		args.numSamples		= 0;
 		args.subpixelBits	= m_subpixelBits;
 
-		return gls::RasterizationTestUtil::verifyTriangleGroupRasterization(glSurface, scene, args, m_testCtx.getLog(), deqp::gls::RasterizationTestUtil::VERIFICATIONMODE_STRICT);
+		return tcu::verifyTriangleGroupRasterization(glSurface, scene, args, m_testCtx.getLog(), tcu::VERIFICATIONMODE_STRICT);
 	}
 }
 
@@ -666,12 +667,12 @@ void SampleMaskCase::init (void)
 		for (int y = 0; y < m_gridsize; ++y)
 		for (int x = 0; x < m_gridsize; ++x)
 		{
-			gridData[(y * m_gridsize + x)*6 + 0] = tcu::Vec4(((float)(x+0) / m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
-			gridData[(y * m_gridsize + x)*6 + 1] = tcu::Vec4(((float)(x+0) / m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
-			gridData[(y * m_gridsize + x)*6 + 2] = tcu::Vec4(((float)(x+1) / m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
-			gridData[(y * m_gridsize + x)*6 + 3] = tcu::Vec4(((float)(x+0) / m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
-			gridData[(y * m_gridsize + x)*6 + 4] = tcu::Vec4(((float)(x+1) / m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
-			gridData[(y * m_gridsize + x)*6 + 5] = tcu::Vec4(((float)(x+1) / m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 0] = tcu::Vec4(((float)(x+0) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 1] = tcu::Vec4(((float)(x+0) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 2] = tcu::Vec4(((float)(x+1) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 3] = tcu::Vec4(((float)(x+0) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 4] = tcu::Vec4(((float)(x+1) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+1) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
+			gridData[(y * m_gridsize + x)*6 + 5] = tcu::Vec4(((float)(x+1) / (float)m_gridsize) * 2.0f - 1.0f, ((float)(y+0) / (float)m_gridsize) * 2.0f - 1.0f, 0.0f, 1.0f);
 		}
 
 		gl.bufferData			(GL_ARRAY_BUFFER, (int)(gridData.size() * sizeof(tcu::Vec4)), gridData[0].getPtr(), GL_STATIC_DRAW);
@@ -911,7 +912,7 @@ void SampleMaskCase::updateTexture (int sample)
 	for (int x = 0; x < m_gridsize; ++x)
 	{
 		if (m_flags & FLAGS_SAMPLE_COVERAGE)
-			gl.sampleCoverage((y*m_gridsize + x) / float(m_gridsize*m_gridsize), GL_FALSE);
+			gl.sampleCoverage((float)(y*m_gridsize + x) / float(m_gridsize*m_gridsize), GL_FALSE);
 
 		gl.drawArrays				(GL_TRIANGLES, (y*m_gridsize + x) * 6, 6);
 		GLU_EXPECT_NO_ERROR			(gl.getError(), "drawArrays");
@@ -934,7 +935,7 @@ bool SampleMaskCase::verifyTexture (int sample)
 	tcu::Surface	errorMask	(m_canvasSize, m_canvasSize);
 	bool			error		= false;
 
-	tcu::clear(errorMask.getAccess(), tcu::RGBA::green.toVec());
+	tcu::clear(errorMask.getAccess(), tcu::RGBA::green().toVec());
 
 	// Draw sample:
 	//	Sample sampleNdx is set to red channel
@@ -954,13 +955,13 @@ bool SampleMaskCase::verifyTexture (int sample)
 		if (color.getGreen() != 0)
 		{
 			error = true;
-			errorMask.setPixel(x, y, tcu::RGBA::red);
+			errorMask.setPixel(x, y, tcu::RGBA::red());
 		}
 		// enabled sample was not written to
 		else if (color.getRed() != 255 && !allowMissingCoverage)
 		{
 			error = true;
-			errorMask.setPixel(x, y, tcu::RGBA::red);
+			errorMask.setPixel(x, y, tcu::RGBA::red());
 		}
 	}
 
@@ -1126,7 +1127,7 @@ void MultisampleTextureUsageCase::init (void)
 		if (m_numSamples > maxSamples)
 			throw tcu::NotSupportedError("Requested sample count is greater than supported");
 
-		m_testCtx.getLog() << tcu::TestLog::Message << "Max sample count for " << glu::getPixelFormatStr(internalFormat) << ": " << maxSamples << tcu::TestLog::EndMessage;
+		m_testCtx.getLog() << tcu::TestLog::Message << "Max sample count for " << glu::getTextureFormatStr(internalFormat) << ": " << maxSamples << tcu::TestLog::EndMessage;
 	}
 
 	{
@@ -1661,8 +1662,8 @@ NegativeFramebufferCase::IterateResult NegativeFramebufferCase::iterate (void)
 {
 	const bool				colorAttachmentTexture	= (m_caseType == CASE_DIFFERENT_N_SAMPLES_TEX) || (m_caseType == CASE_DIFFERENT_FIXED_TEX);
 	const bool				colorAttachmentRbo		= (m_caseType == CASE_DIFFERENT_N_SAMPLES_RBO) || (m_caseType == CASE_DIFFERENT_FIXED_RBO);
-	const glw::GLenum		fixedSampleLocations0	= (m_caseType == CASE_DIFFERENT_N_SAMPLES_RBO) ? (GL_TRUE) : (GL_FALSE);
-	const glw::GLenum		fixedSampleLocations1	= ((m_caseType == CASE_DIFFERENT_FIXED_TEX) || (m_caseType == CASE_DIFFERENT_FIXED_RBO)) ? (GL_TRUE) : (GL_FALSE);
+	const glw::GLboolean	fixedSampleLocations0	= (m_caseType == CASE_DIFFERENT_N_SAMPLES_RBO) ? (GL_TRUE) : (GL_FALSE);
+	const glw::GLboolean	fixedSampleLocations1	= ((m_caseType == CASE_DIFFERENT_FIXED_TEX) || (m_caseType == CASE_DIFFERENT_FIXED_RBO)) ? (GL_TRUE) : (GL_FALSE);
 	glu::CallLogWrapper		gl						(m_context.getRenderContext().getFunctions(), m_testCtx.getLog());
 	glw::GLuint				fboId					= 0;
 	glw::GLuint				rboId					= 0;

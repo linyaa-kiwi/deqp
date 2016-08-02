@@ -1,7 +1,7 @@
 /* WARNING: This is auto-generated file. Do not modify, since changes will
  * be lost! Modify the generating script instead.
  *
- * Generated from Khronos EGL API description (egl.xml) revision 31042.
+ * Generated from Khronos EGL API description (egl.xml) revision 32725.
  */
 virtual EGLBoolean									bindAPI							(EGLenum api) const																								= 0;
 virtual EGLBoolean									bindTexImage					(EGLDisplay dpy, EGLSurface surface, EGLint buffer) const														= 0;
@@ -49,9 +49,11 @@ virtual const char *								queryString						(EGLDisplay dpy, EGLint name) const
 virtual EGLBoolean									querySurface					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint *value) const										= 0;
 virtual EGLBoolean									releaseTexImage					(EGLDisplay dpy, EGLSurface surface, EGLint buffer) const														= 0;
 virtual EGLBoolean									releaseThread					(void) const																									= 0;
+virtual EGLBoolean									setDamageRegionKHR				(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects) const										= 0;
 virtual EGLBoolean									signalSyncKHR					(EGLDisplay dpy, EGLSyncKHR sync, EGLenum mode) const															= 0;
 virtual EGLBoolean									surfaceAttrib					(EGLDisplay dpy, EGLSurface surface, EGLint attribute, EGLint value) const										= 0;
 virtual EGLBoolean									swapBuffers						(EGLDisplay dpy, EGLSurface surface) const																		= 0;
+virtual EGLBoolean									swapBuffersWithDamageKHR		(EGLDisplay dpy, EGLSurface surface, EGLint *rects, EGLint n_rects) const										= 0;
 virtual EGLBoolean									swapInterval					(EGLDisplay dpy, EGLint interval) const																			= 0;
 virtual EGLBoolean									terminate						(EGLDisplay dpy) const																							= 0;
 virtual EGLBoolean									unlockSurfaceKHR				(EGLDisplay dpy, EGLSurface surface) const																		= 0;

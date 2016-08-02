@@ -1,7 +1,7 @@
 /* WARNING: This is auto-generated file. Do not modify, since changes will
  * be lost! Modify the generating script instead.
  *
- * Generated from Khronos EGL API description (egl.xml) revision 31042.
+ * Generated from Khronos EGL API description (egl.xml) revision 32725.
  */
 dst->clientWaitSyncKHR				= (eglClientWaitSyncKHRFunc)				loader->get("eglClientWaitSyncKHR");
 dst->createImageKHR					= (eglCreateImageKHRFunc)					loader->get("eglCreateImageKHR");
@@ -13,6 +13,8 @@ dst->destroySyncKHR					= (eglDestroySyncKHRFunc)					loader->get("eglDestroySyn
 dst->getPlatformDisplayEXT			= (eglGetPlatformDisplayEXTFunc)			loader->get("eglGetPlatformDisplayEXT");
 dst->getSyncAttribKHR				= (eglGetSyncAttribKHRFunc)					loader->get("eglGetSyncAttribKHR");
 dst->lockSurfaceKHR					= (eglLockSurfaceKHRFunc)					loader->get("eglLockSurfaceKHR");
+dst->setDamageRegionKHR				= (eglSetDamageRegionKHRFunc)				loader->get("eglSetDamageRegionKHR");
 dst->signalSyncKHR					= (eglSignalSyncKHRFunc)					loader->get("eglSignalSyncKHR");
+dst->swapBuffersWithDamageKHR		= (eglSwapBuffersWithDamageKHRFunc)			loader->get("eglSwapBuffersWithDamageKHR");
 dst->unlockSurfaceKHR				= (eglUnlockSurfaceKHRFunc)					loader->get("eglUnlockSurfaceKHR");
 dst->waitSyncKHR					= (eglWaitSyncKHRFunc)						loader->get("eglWaitSyncKHR");
