@@ -3,6 +3,7 @@ drawElements Quality Program
 
 An OpenGL ES and EGL testsuite, primarily used by Android and Chrome OS.
 
+Go read the upstream [README](https://android.googlesource.com/platform/external/deqp/+/master/README.md) first.
 
 Android
 -------
