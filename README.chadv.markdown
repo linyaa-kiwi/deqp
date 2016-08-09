@@ -12,7 +12,7 @@ development.
 - [Homepage](http://git.kiwitree.net/cgit/~chadv/deqp/about)
 - `git clone -b master git://git.kiwitree.org/~chadv/deqp`
 
-For build and installation instructions, see INSTALL.chadv.makrdown.
+For build and installation instructions, see INSTALL.chadv.markdown.
 
 
 ### Branches and Tags
