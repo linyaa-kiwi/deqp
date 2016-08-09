@@ -1,7 +1,7 @@
 drawElements Quality Program
 ============================
 
-This is chadv's fork of dEQP, an OpenGL ES and EGL testsuite, primarily used by Android and Chrome OS.
+This is chadv's fork of dEQP, a testsuite for OpenGL ES, EGL, and Vulkan.
 Go read the upstream [README](https://android.googlesource.com/platform/external/deqp/+/master/README.md) first.
 
 ## chadv's dEQP
