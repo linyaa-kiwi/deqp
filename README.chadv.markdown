@@ -37,5 +37,33 @@ development.
 For build and installation instructions, see INSTALL.chadv.makrdown.
 
 
+Branches and Tags
+-----------------
+- **refs/heads/master**  
+  My personal fork, which is based on Android's master branch. It includes
+  fixes and improvements for Linux and Chromium OS. I semi-regularly merge
+  Android's master branch and apply the patches from Chromium OS's dEQP
+  package.
+
+  To view my non-upstreamed patches, I recommend:  
+
+        % git remote add aosp https://android.googlesource.com/platform/external/deqp
+        % git fetch aosp
+        % git log --oneline --decorate ^aosp/master master
+
+- **refs/tags/chromiumos-deqp-$VERSION**  
+  A snapshot of the exact dEQP code built by Chromium OS's dEQP package,
+  `media-gfx/deqp-${VERSION}.ebuild`. This includes patches applied by the
+  ebuild.
+
+- **refs/heads/chromiumos-latest**  
+  Points to the latest tag *chromiumos-deqp-$VERSION*.
+
+- **refs/heads/chromiumos-latest-fixes**  
+  My fixes, rebased onto branch *chromiumos-latest*.
+
+
+
+
 [1]: http://autotest.github.io/
 [2]: https://en.wikipedia.org/wiki/Portage_(software)
