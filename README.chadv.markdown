@@ -36,10 +36,6 @@ development.
 
 For build and installation instructions, see INSTALL.chadv.makrdown.
 
-A snapshot of Chrome OS's Autotest files for dEQP, including the expectation
-lists, is maintained in directory `chromiumos-autotest`.
-
-
 
 [1]: http://autotest.github.io/
 [2]: https://en.wikipedia.org/wiki/Portage_(software)
