@@ -44,7 +44,7 @@ Branches and Tags
   fixes and improvements for Linux and Chromium OS. I semi-regularly merge
   Android's master branch and apply the patches from Chromium OS's dEQP
   package.
-
+  .
   To view my non-upstreamed patches, I recommend:  
 
         % git remote add aosp https://android.googlesource.com/platform/external/deqp
