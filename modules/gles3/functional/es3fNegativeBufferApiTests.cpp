@@ -996,9 +996,15 @@ void NegativeBufferApiTests::init (void)
 			expectError(GL_INVALID_ENUM);
 			m_log << TestLog::EndSection;
 
-			m_log << TestLog::Section("", "GL_INVALID_ENUM is generated if textarget is not an accepted texture target.");
+			// From the OpenGL ES 3.2 spec, on glFramebufferTexture2D, page 241:
+			//
+			//		An INVALID_OPERATION error is generated if texture is not
+			//		zero and textarget is not one of TEXTURE_2D,
+			//		TEXTURE_2D_MULTISAMPLE, or one of the cube map face targets
+			//		from table 8.20
+			m_log << TestLog::Section("", "GL_INVALID_OPERATION is generated if texture is not zero and textarget is not an accepted texture target.");
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, -1, tex2D, 0);
-			expectError(GL_INVALID_ENUM);
+			expectError(GL_INVALID_OPERATION);
 			m_log << TestLog::EndSection;
 
 			m_log << TestLog::Section("", "GL_INVALID_VALUE is generated if level is less than 0 or larger than log_2 of maximum texture size.");
