@@ -83,6 +83,10 @@ public:
 
 	tcu::IVec2 getSurfaceSize (void) const override { return tcu::IVec2(m_width, m_height); }
 	tcu::IVec2 getScreenSize (void) const override { return getSurfaceSize(); }
+
+private:
+							NativeWindow	(const NativeWindow&) = delete;
+	NativeWindow&			operator=		(const NativeWindow&) = delete;
 };
 
 class NativePixmap final : public NativeSurface<eglu::NativePixmap, eglw::EGLNativePixmapType>
@@ -96,6 +100,10 @@ public:
 				  uint32_t height,
 				  uint32_t gbm_format)
 		: NativeSurface(CAPABILITIES, display, width, height, gbm_format) {}
+
+private:
+							NativePixmap	(const NativePixmap&) = delete;
+	NativePixmap&			operator=		(const NativePixmap&) = delete;
 };
 
 } // gbm
