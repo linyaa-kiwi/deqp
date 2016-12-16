@@ -33,6 +33,7 @@ namespace gbm
 Platform::Platform (void)
 {
 	m_nativeDisplayFactoryRegistry.registerFactory(new NativeDisplayFactory());
+	m_contextFactoryRegistry.registerFactory(new eglu::GLContextFactory(m_nativeDisplayFactoryRegistry));
 }
 
 uint32_t
