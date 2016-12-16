@@ -35,10 +35,6 @@ Platform::Platform (void)
 	m_nativeDisplayFactoryRegistry.registerFactory(new NativeDisplayFactory());
 }
 
-Platform::~Platform (void)
-{
-}
-
 uint32_t
 Platform::getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config)
 {
