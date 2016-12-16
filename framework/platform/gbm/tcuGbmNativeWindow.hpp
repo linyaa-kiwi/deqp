@@ -22,12 +22,13 @@
 #include <gbm.h>
 
 #include "egluNativeWindow.hpp"
-#include "tcuGbmNativeWindow.hpp"
 
 namespace tcu
 {
 namespace gbm
 {
+
+class NativeDisplay;
 
 class NativeWindow final : public eglu::NativeWindow
 {
@@ -41,22 +42,9 @@ public:
 	NativeWindow (NativeDisplay *display,
 				  uint32_t width,
 				  uint32_t height,
-				  uint32_t gbm_format)
-		: eglu::NativeWindow(CAPABILITIES),
-		  m_gbm_surface(gbm_surface_create(display->getGbmDevice(),
-										   width, height, gbm_format,
-										   GBM_BO_USE_RENDERING)),
-		  m_width(width),
-		  m_height(height)
-	{
-		TCU_CHECK(m_gbm_surface != nullptr);
-	}
+				  uint32_t gbm_format);
 
-	~NativeWindow (void) override
-	{
-		if (m_gbm_surface != nullptr)
-			gbm_surface_destroy(m_gbm_surface);
-	}
+	~NativeWindow (void) override;
 
 	eglw::EGLNativeWindowType getLegacyNative (void) override
 	{

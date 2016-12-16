@@ -42,45 +42,8 @@ public:
 
 	static const Capability CAPABILITIES = Capability(CAPABILITY_GET_DISPLAY_LEGACY |
 													  CAPABILITY_GET_DISPLAY_PLATFORM);
-	NativeDisplay (void)
-		: eglu::NativeDisplay(CAPABILITIES,
-							  EGL_PLATFORM_GBM_KHR,
-							  "EGL_KHR_platform_gbm"),
-		  m_library("libEGL.so"),
-		  m_gbm_device(nullptr),
-		  m_fd(-1)
-	{
-		for (int i = 128; i < 192; ++i) {
-			char* path;
-			if (asprintf(&path, "/dev/dri/renderD%d", i) < 0)
-				continue;
-
-			m_fd = open(path, O_RDWR | O_CLOEXEC);
-			if (m_fd == -1)
-				continue;
-
-			m_gbm_device = gbm_create_device(m_fd);
-			if (m_gbm_device == nullptr) {
-				close(m_fd);
-				m_fd = -1;
-				continue;
-			} else {
-				break;
-			}
-		}
-
-		if (m_gbm_device == nullptr)
-			TCU_FAIL("failed to open GBM device");
-	}
-
-	~NativeDisplay (void) override
-	{
-		if (m_gbm_device != nullptr)
-			gbm_device_destroy(m_gbm_device);
-
-		if (m_fd != -1)
-			close(m_fd);
-	}
+	NativeDisplay (void);
+	~NativeDisplay (void) override;
 
 	const eglw::Library& getLibrary	(void) const override
 	{

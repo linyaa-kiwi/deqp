@@ -17,38 +17,52 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <gbm.h>
-
-#include "egluNativePixmap.hpp"
+#include "tcuGbmNativeDisplay.hpp"
 
 namespace tcu
 {
 namespace gbm
 {
 
-class NativePixmap;
-
-class NativePixmapFactory final : public eglu::NativePixmapFactory
+NativeDisplay::NativeDisplay (void)
+	: eglu::NativeDisplay(CAPABILITIES,
+						  EGL_PLATFORM_GBM_KHR,
+						  "EGL_KHR_platform_gbm"),
+	  m_library("libEGL.so"),
+	  m_gbm_device(nullptr),
+	  m_fd(-1)
 {
-public:
-	NativePixmapFactory (void);
-	~NativePixmapFactory (void) override {}
+	for (int i = 128; i < 192; ++i) {
+		char* path;
+		if (asprintf(&path, "/dev/dri/renderD%d", i) < 0)
+			continue;
 
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  int width, int height) const override;
+		m_fd = open(path, O_RDWR | O_CLOEXEC);
+		if (m_fd == -1)
+			continue;
 
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  eglw::EGLDisplay display,
-									  eglw::EGLConfig config,
-									  const eglw::EGLAttrib* attribList,
-									  int width, int height) const override;
+		m_gbm_device = gbm_create_device(m_fd);
+		if (m_gbm_device == nullptr) {
+			close(m_fd);
+			m_fd = -1;
+			continue;
+		} else {
+			break;
+		}
+	}
 
-private:
-	NativePixmapFactory	(const NativePixmapFactory&) = delete;
-	NativePixmapFactory& operator=(const NativePixmapFactory&) = delete;
-};
+	if (m_gbm_device == nullptr)
+		TCU_FAIL("failed to open GBM device");
+}
+
+NativeDisplay::~NativeDisplay (void)
+{
+	if (m_gbm_device != nullptr)
+		gbm_device_destroy(m_gbm_device);
+
+	if (m_fd != -1)
+		close(m_fd);
+}
 
 } // gbm
 } // tcu

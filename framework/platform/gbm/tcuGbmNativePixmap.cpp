@@ -17,38 +17,31 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <gbm.h>
-
-#include "egluNativePixmap.hpp"
+#include "tcuGbmNativeDisplay.hpp"
+#include "tcuGbmNativePixmap.hpp"
 
 namespace tcu
 {
 namespace gbm
 {
 
-class NativePixmap;
-
-class NativePixmapFactory final : public eglu::NativePixmapFactory
+NativePixmap::NativePixmap (NativeDisplay *display,
+							uint32_t width,
+							uint32_t height,
+							uint32_t gbm_format)
+	: eglu::NativePixmap(CAPABILITIES),
+	  m_gbm_surface(gbm_surface_create(display->getGbmDevice(),
+									   width, height, gbm_format,
+									   GBM_BO_USE_RENDERING))
 {
-public:
-	NativePixmapFactory (void);
-	~NativePixmapFactory (void) override {}
+	TCU_CHECK(m_gbm_surface != nullptr);
+}
 
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  int width, int height) const override;
-
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  eglw::EGLDisplay display,
-									  eglw::EGLConfig config,
-									  const eglw::EGLAttrib* attribList,
-									  int width, int height) const override;
-
-private:
-	NativePixmapFactory	(const NativePixmapFactory&) = delete;
-	NativePixmapFactory& operator=(const NativePixmapFactory&) = delete;
-};
+NativePixmap::~NativePixmap (void)
+{
+	if (m_gbm_surface != nullptr)
+		gbm_surface_destroy(m_gbm_surface);
+}
 
 } // gbm
 } // tcu

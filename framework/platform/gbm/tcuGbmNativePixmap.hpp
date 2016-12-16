@@ -28,6 +28,8 @@ namespace tcu
 namespace gbm
 {
 
+class NativeDisplay;
+
 class NativePixmap final : public eglu::NativePixmap
 {
 public:
@@ -39,20 +41,9 @@ public:
 	NativePixmap (NativeDisplay *display,
 				  uint32_t width,
 				  uint32_t height,
-				  uint32_t gbm_format)
-		: eglu::NativePixmap(CAPABILITIES),
-		  m_gbm_surface(gbm_surface_create(display->getGbmDevice(),
-										   width, height, gbm_format,
-										   GBM_BO_USE_RENDERING))
-	{
-		TCU_CHECK(m_gbm_surface != nullptr);
-	}
+				  uint32_t gbm_format);
 
-	~NativePixmap (void) override
-	{
-		if (m_gbm_surface != nullptr)
-			gbm_surface_destroy(m_gbm_surface);
-	}
+	~NativePixmap (void) override;
 
 	eglw::EGLNativePixmapType getLegacyNative (void) override
 	{

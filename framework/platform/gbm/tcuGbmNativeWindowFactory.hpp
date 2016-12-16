@@ -32,33 +32,18 @@ namespace gbm
 class NativeWindowFactory final : public eglu::NativeWindowFactory
 {
 public:
-	NativeWindowFactory (void)
-		: eglu::NativeWindowFactory("default", "default",
-									 NativeWindow::CAPABILITIES)
-	{}
+	NativeWindowFactory (void);
 
 	~NativeWindowFactory (void) override {}
 
 	eglu::NativeWindow* createWindow (eglu::NativeDisplay* nativeDisplay,
-									  const eglu::WindowParams& params) const override
-	{
-		return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
-								params.width, params.height, GBM_FORMAT_RGBA8888);
-	}
+									  const eglu::WindowParams& params) const override;
 
 	eglu::NativeWindow* createWindow (eglu::NativeDisplay* nativeDisplay,
 									  eglw::EGLDisplay display,
 									  eglw::EGLConfig config,
 									  const eglw::EGLAttrib* attribList,
-									  const eglu::WindowParams& params) const override
-	{
-		const eglw::Library& egl = nativeDisplay->getLibrary();
-		(void) attribList;
-
-		return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
-								params.width, params.height,
-								Platform::getGbmFormat(egl, display, config));
-	}
+									  const eglu::WindowParams& params) const override;
 
 private:
 	NativeWindowFactory	(const NativeWindowFactory&) = delete;
