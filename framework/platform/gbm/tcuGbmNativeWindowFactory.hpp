@@ -57,19 +57,12 @@ public:
 
 		return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
 								params.width, params.height,
-								getGbmFormat(egl, display, config));
+								Platform::getGbmFormat(egl, display, config));
 	}
 
 private:
 	NativeWindowFactory	(const NativeWindowFactory&) = delete;
 	NativeWindowFactory& operator=(const NativeWindowFactory&) = delete;
-
-	static uint32_t getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config)
-	{
-		eglw::EGLint gbm_format = 0;
-		TCU_CHECK(egl.getConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &gbm_format));
-		return gbm_format;
-	}
 };
 
 } // gbm

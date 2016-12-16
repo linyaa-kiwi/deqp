@@ -56,19 +56,12 @@ public:
 
 		return new NativePixmap(static_cast<NativeDisplay*>(nativeDisplay),
 								width, height,
-								getGbmFormat(egl, display, config));
+								Platform::getGbmFormat(egl, display, config));
 	}
 
 private:
 	NativePixmapFactory	(const NativePixmapFactory&) = delete;
 	NativePixmapFactory& operator=(const NativePixmapFactory&) = delete;
-
-	static uint32_t getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config)
-	{
-		eglw::EGLint gbm_format = 0;
-		TCU_CHECK(egl.getConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &gbm_format));
-		return gbm_format;
-	}
 };
 
 } // gbm

@@ -36,7 +36,7 @@ class Platform final : public tcu::Platform, public eglu::Platform, public glu::
 {
 public:
 	Platform (void);
-	~Platform (void) override;
+	~Platform (void) override {}
 
 	const eglu::Platform& getEGLPlatform (void) const override
 	{
@@ -47,6 +47,8 @@ public:
 	{
 		return *this;
 	}
+
+	static uint32_t getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config);
 };
 
 } // gbm
