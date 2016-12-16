@@ -49,6 +49,12 @@ if (NOT DEFINED TCUTIL_PLATFORM_SRCS)
 				X11/tcuX11GlxPlatform.cpp
 				)
 		endif()
+
+	elseif (DE_OS_IS_UNIX AND DEQP_USE_GBM)
+		set(TCUTIL_PLATFORM_SRCS
+			gbm/tcuGbmPlatform.cpp
+			)
+
 	elseif (DE_OS_IS_ANDROID)
 		set(TCUTIL_PLATFORM_SRCS
 			android/tcuAndroidExecService.cpp
