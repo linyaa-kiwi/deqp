@@ -36,7 +36,7 @@ Platform::Platform (void)
 }
 
 uint32_t
-Platform::getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config)
+getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config)
 {
 	eglw::EGLint gbm_format = 0;
 	TCU_CHECK(egl.getConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &gbm_format));

@@ -51,7 +51,7 @@ NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
 
 	return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
 							params.width, params.height,
-							Platform::getGbmFormat(egl, display, config));
+							getGbmFormat(egl, display, config));
 }
 
 } // gbm

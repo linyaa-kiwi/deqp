@@ -51,7 +51,7 @@ NativePixmapFactory::createPixmap (eglu::NativeDisplay* nativeDisplay,
 	(void) attribList;
 	return new NativePixmap(static_cast<NativeDisplay*>(nativeDisplay),
 							width, height,
-							Platform::getGbmFormat(egl, display, config));
+							getGbmFormat(egl, display, config));
 }
 
 } // gbm
