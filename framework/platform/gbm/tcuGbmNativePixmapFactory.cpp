@@ -18,8 +18,8 @@
  */
 
 #include "tcuGbmNativeDisplay.hpp"
-#include "tcuGbmNativePixmap.hpp"
 #include "tcuGbmNativePixmapFactory.hpp"
+#include "tcuGbmNativeSurface.hpp"
 #include "tcuGbmPlatform.hpp"
 
 namespace tcu

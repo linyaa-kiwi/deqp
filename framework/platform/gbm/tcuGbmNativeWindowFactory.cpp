@@ -18,6 +18,7 @@
  */
 
 #include "tcuGbmNativeDisplay.hpp"
+#include "tcuGbmNativeSurface.hpp"
 #include "tcuGbmNativeWindowFactory.hpp"
 #include "tcuGbmPlatform.hpp"
 

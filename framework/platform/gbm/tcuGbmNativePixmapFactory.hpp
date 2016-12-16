@@ -19,10 +19,6 @@
 
 #pragma once
 
-#include <gbm.h>
-
-#include "egluNativePixmap.hpp"
-
 namespace tcu
 {
 namespace gbm

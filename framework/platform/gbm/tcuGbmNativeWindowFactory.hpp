@@ -19,15 +19,12 @@
 
 #pragma once
 
-#include <gbm.h>
-
-#include "egluNativeWindow.hpp"
-#include "tcuGbmNativeWindow.hpp"
-
 namespace tcu
 {
 namespace gbm
 {
+
+class NativeWindow;
 
 class NativeWindowFactory final : public eglu::NativeWindowFactory
 {
