@@ -48,6 +48,10 @@ public:
 private:
 	NativePixmapFactory	(const NativePixmapFactory&) = delete;
 	NativePixmapFactory& operator=(const NativePixmapFactory&) = delete;
+
+	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
+									  int width, int height,
+									  uint32_t gbm_format) const;
 };
 
 } // gbm

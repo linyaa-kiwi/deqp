@@ -36,8 +36,7 @@ eglu::NativePixmap*
 NativePixmapFactory::createPixmap (eglu::NativeDisplay* nativeDisplay,
 								   int width, int height) const
 {
-	return new NativePixmap(static_cast<NativeDisplay*>(nativeDisplay),
-							width, height, GBM_FORMAT_RGBA8888);
+	return createPixmap(nativeDisplay, width, height, GBM_FORMAT_RGBA8888);
 }
 
 eglu::NativePixmap*
@@ -49,9 +48,17 @@ NativePixmapFactory::createPixmap (eglu::NativeDisplay* nativeDisplay,
 {
 	const eglw::Library& egl = nativeDisplay->getLibrary();
 	(void) attribList;
-	return new NativePixmap(static_cast<NativeDisplay*>(nativeDisplay),
-							width, height,
+	return createPixmap(nativeDisplay, width, height,
 							getGbmFormat(egl, display, config));
+}
+
+eglu::NativePixmap*
+NativePixmapFactory::createPixmap (eglu::NativeDisplay* nativeDisplay,
+								   int width, int height,
+								   uint32_t gbm_format) const
+{
+	return new NativePixmap(static_cast<NativeDisplay*>(nativeDisplay),
+							width, height, gbm_format);
 }
 
 } // gbm

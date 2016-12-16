@@ -35,8 +35,7 @@ eglu::NativeWindow*
 NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
 								   const eglu::WindowParams& params) const
 {
-	return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
-							params.width, params.height, GBM_FORMAT_RGBA8888);
+	return createWindow(nativeDisplay, params.width, params.height, GBM_FORMAT_RGBA8888);
 }
 
 eglu::NativeWindow*
@@ -48,10 +47,23 @@ NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
 {
 	const eglw::Library& egl = nativeDisplay->getLibrary();
 	(void) attribList;
+	return createWindow(nativeDisplay, params.width, params.height,
+						getGbmFormat(egl, display, config));
+}
+
+eglu::NativeWindow*
+NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
+								   int width, int height,
+								   uint32_t gbm_format) const
+{
+	if (width == eglu::WindowParams::SIZE_DONT_CARE)
+		width = 512;
+
+	if (height == eglu::WindowParams::SIZE_DONT_CARE)
+		height = 512;
 
 	return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
-							params.width, params.height,
-							getGbmFormat(egl, display, config));
+							width, height, gbm_format);
 }
 
 } // gbm
