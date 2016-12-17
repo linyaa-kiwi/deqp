@@ -53,6 +53,7 @@ if (NOT DEFINED TCUTIL_PLATFORM_SRCS)
 	elseif (DE_OS_IS_UNIX AND DEQP_USE_GBM)
 		set(TCUTIL_PLATFORM_SRCS
 			gbm/tcuGbmNativeDisplay.cpp
+			gbm/tcuGbmNativeDisplayFactory.cpp
 			gbm/tcuGbmNativePixmapFactory.cpp
 			gbm/tcuGbmNativeWindowFactory.cpp
 			gbm/tcuGbmPlatform.cpp

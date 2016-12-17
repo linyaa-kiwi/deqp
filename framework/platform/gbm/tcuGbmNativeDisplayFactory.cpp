@@ -17,30 +17,30 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <gbm.h>
-
-#include "egluNativeDisplay.hpp"
-#include "tcuGbmNativeDisplay.hpp"
-#include "tcuGbmNativePixmapFactory.hpp"
-#include "tcuGbmNativeWindowFactory.hpp"
+#include "tcuGbmNativeDisplayFactory.hpp"
 
 namespace tcu
 {
 namespace gbm
 {
 
-class NativeDisplayFactory final : public eglu::NativeDisplayFactory
+NativeDisplayFactory::NativeDisplayFactory (void)
+	: eglu::NativeDisplayFactory("default",
+								 "Default display",
+								 NativeDisplay::CAPABILITIES,
+								 EGL_PLATFORM_GBM_KHR,
+								 "EGL_KHR_platform_gbm")
 {
-public:
-	NativeDisplayFactory (void);
-	NativeDisplay* createDisplay (const eglw::EGLAttrib* attribList) const override;
+	m_nativeWindowRegistry.registerFactory(new NativeWindowFactory());
+	m_nativePixmapRegistry.registerFactory(new NativePixmapFactory());
+}
 
-private:
-							NativeDisplayFactory	(const NativeDisplayFactory&) = delete;
-	NativeDisplayFactory&	operator=				(const NativeDisplayFactory&) = delete;
-};
+NativeDisplay*
+NativeDisplayFactory::createDisplay (const eglw::EGLAttrib* attribList) const
+{
+	DE_UNREF(attribList);
+	return new NativeDisplay();
+}
 
 } // gbm
 } // tcu
