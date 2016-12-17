@@ -18,7 +18,16 @@
 #
 #-------------------------------------------------------------------------
 
-message("*** Using GBM target")
+#
+# GBM, a Generic Buffer Manager for Linux
+#
+# For more info, see the EGL_KHR_platform_gbm spefication [1] and the
+# official gbm.h header [2].
+#
+# [1]: http://khronos.org/registry/egl/extensions/KHR/EGL_KHR_platform_gbm.txt
+# [2]: https://cgit.freedesktop.org/mesa/mesa/tree/src/gbm/main/gbm.h?id=mesa-13.0.0
+#
+message("*** Using GBM")
 set(DEQP_TARGET_NAME	"GBM")
 set(DEQP_USE_GBM		ON)
 
