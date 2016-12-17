@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "tcuGbmDefs.hpp"
 #include "egluNativeDisplay.hpp"
 #include "eglwLibrary.hpp"
 #include "eglwEnums.hpp"
