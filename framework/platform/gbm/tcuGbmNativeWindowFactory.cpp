@@ -18,7 +18,7 @@
  */
 
 #include "tcuGbmNativeDisplay.hpp"
-#include "tcuGbmNativeSurface.hpp"
+#include "tcuGbmNativeWindow.hpp"
 #include "tcuGbmNativeWindowFactory.hpp"
 #include "tcuGbmPlatform.hpp"
 
@@ -28,34 +28,22 @@ namespace gbm
 {
 
 NativeWindowFactory::NativeWindowFactory (void)
-	: eglu::NativeWindowFactory("default", "default",
-								NativeWindow::CAPABILITIES)
+	: eglu::NativeWindowFactory("default", "default", NativeWindow::CAPABILITIES)
 {}
 
-eglu::NativeWindow*
-NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
-								   const eglu::WindowParams& params) const
+eglu::NativeWindow* NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay, const eglu::WindowParams& params) const
 {
 	return createWindow(nativeDisplay, params.width, params.height, GBM_FORMAT_RGBA8888);
 }
 
-eglu::NativeWindow*
-NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
-								   eglw::EGLDisplay display,
-								   eglw::EGLConfig config,
-								   const eglw::EGLAttrib* attribList,
-								   const eglu::WindowParams& params) const
+eglu::NativeWindow* NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay, eglw::EGLDisplay display, eglw::EGLConfig config, const eglw::EGLAttrib* attribList, const eglu::WindowParams& params) const
 {
 	const eglw::Library& egl = nativeDisplay->getLibrary();
 	(void) attribList;
-	return createWindow(nativeDisplay, params.width, params.height,
-						getGbmFormat(egl, display, config));
+	return createWindow(nativeDisplay, params.width, params.height, getGbmFormat(egl, display, config));
 }
 
-eglu::NativeWindow*
-NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
-								   int width, int height,
-								   uint32_t gbm_format) const
+eglu::NativeWindow* NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay, int width, int height, uint32_t gbm_format) const
 {
 	if (width == eglu::WindowParams::SIZE_DONT_CARE)
 		width = 512;
@@ -63,8 +51,7 @@ NativeWindowFactory::createWindow (eglu::NativeDisplay* nativeDisplay,
 	if (height == eglu::WindowParams::SIZE_DONT_CARE)
 		height = 512;
 
-	return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay),
-							width, height, gbm_format);
+	return new NativeWindow(static_cast<NativeDisplay*>(nativeDisplay), width, height, gbm_format);
 }
 
 } // gbm

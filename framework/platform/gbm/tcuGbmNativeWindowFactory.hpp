@@ -29,26 +29,14 @@ class NativeWindow;
 class NativeWindowFactory final : public eglu::NativeWindowFactory
 {
 public:
-	NativeWindowFactory (void);
-
-	~NativeWindowFactory (void) override {}
-
-	eglu::NativeWindow* createWindow (eglu::NativeDisplay* nativeDisplay,
-									  const eglu::WindowParams& params) const override;
-
-	eglu::NativeWindow* createWindow (eglu::NativeDisplay* nativeDisplay,
-									  eglw::EGLDisplay display,
-									  eglw::EGLConfig config,
-									  const eglw::EGLAttrib* attribList,
-									  const eglu::WindowParams& params) const override;
+							NativeWindowFactory	(void);
+	eglu::NativeWindow*		createWindow		(eglu::NativeDisplay* nativeDisplay, const eglu::WindowParams& params) const override;
+	eglu::NativeWindow*		createWindow		(eglu::NativeDisplay* nativeDisplay, eglw::EGLDisplay display, eglw::EGLConfig config, const eglw::EGLAttrib* attribList, const eglu::WindowParams& params) const override;
 
 private:
-	NativeWindowFactory	(const NativeWindowFactory&) = delete;
-	NativeWindowFactory& operator=(const NativeWindowFactory&) = delete;
-
-	eglu::NativeWindow* createWindow (eglu::NativeDisplay* nativeDisplay,
-									  int width, int height,
-									  uint32_t gbm_format) const;
+							NativeWindowFactory	(const NativeWindowFactory&) = delete;
+	NativeWindowFactory&	operator=			(const NativeWindowFactory&) = delete;
+	eglu::NativeWindow*		createWindow		(eglu::NativeDisplay* nativeDisplay, int width, int height, uint32_t gbm_format) const;
 };
 
 } // gbm

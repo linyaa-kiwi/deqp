@@ -35,10 +35,13 @@ namespace gbm
 class Platform final : public tcu::Platform, public eglu::Platform, public glu::Platform
 {
 public:
-	Platform (void);
-	~Platform (void) override {}
-	const eglu::Platform& getEGLPlatform (void) const override { return *this; }
-	const glu::Platform& getGLPlatform (void) const override { return *this; }
+							Platform		(void);
+	const eglu::Platform&	getEGLPlatform	(void) const override	{ return *this; }
+	const glu::Platform&	getGLPlatform	(void) const override	{ return *this; }
+
+private:
+							Platform		(const Platform&) = delete;
+	Platform&				operator=		(const Platform&) = delete;
 };
 
 uint32_t getGbmFormat (const eglw::Library& egl, eglw::EGLDisplay display, eglw::EGLConfig config);

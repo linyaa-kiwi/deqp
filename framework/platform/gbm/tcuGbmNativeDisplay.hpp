@@ -39,38 +39,22 @@ class NativeDisplay final : public eglu::NativeDisplay
 public:
 	typedef eglu::NativeDisplay::Capability Capability;
 
-	static const Capability CAPABILITIES = Capability(CAPABILITY_GET_DISPLAY_LEGACY |
-													  CAPABILITY_GET_DISPLAY_PLATFORM);
-	NativeDisplay (void);
-	~NativeDisplay (void) override;
+	static const Capability		CAPABILITIES		= Capability(CAPABILITY_GET_DISPLAY_LEGACY | CAPABILITY_GET_DISPLAY_PLATFORM);
 
-	const eglw::Library& getLibrary	(void) const override
-	{
-		return m_library;
-	}
-
-	eglw::EGLNativeDisplayType getLegacyNative (void) override
-	{
-		return m_gbm_device;
-	}
-
-	void* getPlatformNative	(void) override
-	{
-		return m_gbm_device;
-	}
-
-	gbm_device* getGbmDevice (void)
-	{
-		return m_gbm_device;
-	}
+								NativeDisplay		(void);
+								~NativeDisplay		(void) override;
+	const eglw::Library&		getLibrary			(void) const override	{ return m_library; }
+	eglw::EGLNativeDisplayType	getLegacyNative		(void) override			{ return m_gbm_device; }
+	void*						getPlatformNative	(void) override			{ return m_gbm_device; }
+	::gbm_device*				getGbmDevice		(void)					{ return m_gbm_device; }
 
 private:
-							NativeDisplay	(const NativeDisplay&) = delete;
-	NativeDisplay&			operator=		(const NativeDisplay&) = delete;
+								NativeDisplay		(const NativeDisplay&) = delete;
+	NativeDisplay&				operator=			(const NativeDisplay&) = delete;
 
-	eglw::DefaultLibrary	m_library;
-	::gbm_device*			m_gbm_device;
-	int						m_fd;
+	eglw::DefaultLibrary		m_library;
+	::gbm_device*				m_gbm_device;
+	int							m_fd;
 };
 
 } // gbm

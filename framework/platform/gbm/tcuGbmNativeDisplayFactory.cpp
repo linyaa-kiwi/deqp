@@ -25,18 +25,13 @@ namespace gbm
 {
 
 NativeDisplayFactory::NativeDisplayFactory (void)
-	: eglu::NativeDisplayFactory("default",
-								 "Default display",
-								 NativeDisplay::CAPABILITIES,
-								 EGL_PLATFORM_GBM_KHR,
-								 "EGL_KHR_platform_gbm")
+	: eglu::NativeDisplayFactory("default", "Default display", NativeDisplay::CAPABILITIES, EGL_PLATFORM_GBM_KHR, "EGL_KHR_platform_gbm")
 {
 	m_nativeWindowRegistry.registerFactory(new NativeWindowFactory());
 	m_nativePixmapRegistry.registerFactory(new NativePixmapFactory());
 }
 
-NativeDisplay*
-NativeDisplayFactory::createDisplay (const eglw::EGLAttrib* attribList) const
+NativeDisplay* NativeDisplayFactory::createDisplay (const eglw::EGLAttrib* attribList) const
 {
 	DE_UNREF(attribList);
 	return new NativeDisplay();

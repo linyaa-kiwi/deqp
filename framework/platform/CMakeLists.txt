@@ -55,6 +55,7 @@ if (NOT DEFINED TCUTIL_PLATFORM_SRCS)
 			gbm/tcuGbmNativeDisplay.cpp
 			gbm/tcuGbmNativeDisplayFactory.cpp
 			gbm/tcuGbmNativePixmapFactory.cpp
+			gbm/tcuGbmNativeSurface.cpp
 			gbm/tcuGbmNativeWindowFactory.cpp
 			gbm/tcuGbmPlatform.cpp
 			)

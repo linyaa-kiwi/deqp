@@ -17,30 +17,27 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <gbm.h>
-
-#include "egluNativeDisplay.hpp"
 #include "tcuGbmNativeDisplay.hpp"
-#include "tcuGbmNativePixmapFactory.hpp"
-#include "tcuGbmNativeWindowFactory.hpp"
+#include "tcuGbmNativeSurface.hpp"
 
 namespace tcu
 {
 namespace gbm
 {
 
-class NativeDisplayFactory final : public eglu::NativeDisplayFactory
+NativeSurface::NativeSurface (NativeDisplay *display, uint32_t width, uint32_t height, uint32_t gbm_format)
+	: m_gbm_surface(gbm_surface_create(display->getGbmDevice(), width, height, gbm_format, GBM_BO_USE_RENDERING))
+	, m_width(width)
+	, m_height(height)
 {
-public:
-							NativeDisplayFactory	(void);
-	NativeDisplay*			createDisplay			(const eglw::EGLAttrib* attribList) const override;
+	TCU_CHECK(m_gbm_surface != nullptr);
+}
 
-private:
-							NativeDisplayFactory	(const NativeDisplayFactory&) = delete;
-	NativeDisplayFactory&	operator=				(const NativeDisplayFactory&) = delete;
-};
+NativeSurface::~NativeSurface (void)
+{
+	if (m_gbm_surface != nullptr)
+		gbm_surface_destroy(m_gbm_surface);
+}
 
 } // gbm
 } // tcu

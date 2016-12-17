@@ -29,25 +29,14 @@ class NativePixmap;
 class NativePixmapFactory final : public eglu::NativePixmapFactory
 {
 public:
-	NativePixmapFactory (void);
-	~NativePixmapFactory (void) override {}
-
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  int width, int height) const override;
-
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  eglw::EGLDisplay display,
-									  eglw::EGLConfig config,
-									  const eglw::EGLAttrib* attribList,
-									  int width, int height) const override;
+							NativePixmapFactory	(void);
+	eglu::NativePixmap*		createPixmap		(eglu::NativeDisplay* nativeDisplay, int width, int height) const override;
+	eglu::NativePixmap*		createPixmap		(eglu::NativeDisplay* nativeDisplay, eglw::EGLDisplay display, eglw::EGLConfig config, const eglw::EGLAttrib* attribList, int width, int height) const override;
 
 private:
-	NativePixmapFactory	(const NativePixmapFactory&) = delete;
-	NativePixmapFactory& operator=(const NativePixmapFactory&) = delete;
-
-	eglu::NativePixmap* createPixmap (eglu::NativeDisplay* nativeDisplay,
-									  int width, int height,
-									  uint32_t gbm_format) const;
+							NativePixmapFactory	(const NativePixmapFactory&) = delete;
+	NativePixmapFactory&	operator=			(const NativePixmapFactory&) = delete;
+	eglu::NativePixmap*		createPixmap		(eglu::NativeDisplay* nativeDisplay, int width, int height, uint32_t gbm_format) const;
 };
 
 } // gbm
