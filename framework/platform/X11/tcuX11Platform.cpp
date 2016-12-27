@@ -144,5 +144,6 @@ X11Platform::X11Platform (void)
 
 tcu::Platform* createPlatform (void)
 {
+	DE_CHECK_RUNTIME_ERR(XInitThreads() != 0);
 	return new tcu::x11::X11Platform();
 }
