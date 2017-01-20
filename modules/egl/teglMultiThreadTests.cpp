@@ -54,6 +54,11 @@ using std::ostringstream;
 
 using namespace eglw;
 
+#define logLoc(FMT, ...) \
+	do { \
+		fprintf(stderr, "(pthread 0x%02lx) %s:%d: " FMT "\n", pthread_self(), __FILE__, __LINE__, ##__VA_ARGS__); \
+	} while (0)
+
 namespace deqp
 {
 namespace egl
@@ -185,48 +190,69 @@ TestThread::TestThread (MultiThreadedTest& test, int id)
 
 void TestThread::run (void)
 {
+	logLoc("start setting m_status = THREADSTATUS_RUNNING");
 	m_status = THREADSTATUS_RUNNING;
+	logLoc("done setting m_status = THREADSTATUS_RUNNING");
 
 	try
 	{
-		if (m_test.execTest(*this))
+		logLoc("pre m_test.execText()");
+		if (m_test.execTest(*this)) {
+			logLoc("done m_test.execText(), m_status = THREADSTATUS_READY");
 			m_status = THREADSTATUS_READY;
-		else
+		}
+		else {
+			logLoc("done m_test.execText(), m_status = THREADSTATUS_ERROR");
 			m_status = THREADSTATUS_ERROR;
+		}
 	}
 	catch (const TestThread::TestStop&)
 	{
+		logLoc("catch");
 		getLog() << ThreadLog::BeginMessage << "Thread stopped" << ThreadLog::EndMessage;
 	}
 	catch (const tcu::NotSupportedError& e)
 	{
+		logLoc("catch");
 		getLog() << ThreadLog::BeginMessage << "Not supported: '" << e.what() << "'" << ThreadLog::EndMessage;
 	}
 	catch (const std::exception& e)
 	{
+		logLoc("catch");
 		getLog() << ThreadLog::BeginMessage << "Got exception: '" << e.what() << "'" << ThreadLog::EndMessage;
 	}
 	catch (...)
 	{
+		logLoc("catch");
 		getLog() << ThreadLog::BeginMessage << "Unknown exception" << ThreadLog::EndMessage;
 	}
+
+	logLoc("return from TestThread::run");
 }
 
 bool MultiThreadedTest::execTest (TestThread& thread)
 {
+	logLoc("enter MultiThreadedTest::execTest");
+
 	bool isOk = false;
 
 	try
 	{
+		logLoc("pre runThread");
 		isOk = runThread(thread);
+		logLoc("post runThread");
 	}
 	catch (const TestThread::TestStop&)
 	{
+		logLoc("catch");
+
 		// Thread exited due to error in other thread
 		throw;
 	}
 	catch (const tcu::NotSupportedError&)
 	{
+		logLoc("catch");
+
 		// Set status of each thread
 		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++)
 			m_threads[threadNdx]->setStatus(TestThread::THREADSTATUS_NOT_SUPPORTED);
@@ -242,6 +268,8 @@ bool MultiThreadedTest::execTest (TestThread& thread)
 	}
 	catch(...)
 	{
+		logLoc("catch");
+
 		// Set status of each thread
 		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++)
 			m_threads[threadNdx]->setStatus(TestThread::THREADSTATUS_ERROR);
@@ -256,6 +284,7 @@ bool MultiThreadedTest::execTest (TestThread& thread)
 		throw;
 	}
 
+	logLoc("return from MultiThreadedTest::execTest");
 	return isOk;
 }
 
@@ -341,17 +370,23 @@ TestCase::IterateResult MultiThreadedTest::iterate (void)
 		// Create threads
 		m_threads.reserve(m_threadCount);
 
-		for (int threadNdx = 0; threadNdx < m_threadCount; threadNdx++)
+		for (int threadNdx = 0; threadNdx < m_threadCount; threadNdx++) {
 			m_threads.push_back(new TestThread(*this, threadNdx));
+		}
 
 		m_startTimeUs = deGetMicroseconds();
 
 		// Run threads
-		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++)
+		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++) {
+			//logLoc("start threadNdx=%d", threadNdx);
 			m_threads[threadNdx]->start();
+			//logLoc("started threadNdx=%d", threadNdx);
+		}
 
 		m_initialized = true;
 	}
+
+	logLoc("m_threadCount=%d", m_threadCount);
 
 	int readyCount = 0;
 	for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++)
@@ -362,9 +397,16 @@ TestCase::IterateResult MultiThreadedTest::iterate (void)
 
 	if (readyCount == m_threadCount)
 	{
+		logLoc("readyCount == m_threadCount");
+
 		// Join threads
-		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++)
+		for (int threadNdx = 0; threadNdx < (int)m_threads.size(); threadNdx++) {
+			logLoc("join threadNdx=%d", threadNdx);
 			m_threads[threadNdx]->join();
+			logLoc("joined threadNdx=%d", threadNdx);
+		}
+
+		logLoc("all threads joined");
 
 		bool isOk			= true;
 		bool notSupported	= false;
@@ -431,6 +473,8 @@ TestCase::IterateResult MultiThreadedTest::iterate (void)
 	}
 	else
 	{
+		logLoc("readyCount != m_threadCount");
+
 		// Check for timeout
 		const deUint64 currentTimeUs = deGetMicroseconds();
 
@@ -913,6 +957,8 @@ void MultiThreadedObjectTest::deinit (void)
 
 bool MultiThreadedObjectTest::runThread (TestThread& thread)
 {
+	logLoc("enter MultiThreadedObjectTest::runThread");
+
 	const Library&		egl		= getLibrary();
 
 	if (thread.getId() == 0)
@@ -938,57 +984,99 @@ bool MultiThreadedObjectTest::runThread (TestThread& thread)
 
 		EGLU_CHECK_CALL(egl, chooseConfig(m_display, attribList, &m_config, 1, &configCount));
 
-		if (configCount == 0)
+		if (configCount == 0) {
+			logLoc("throw");
 			TCU_THROW(NotSupportedError, "No usable config found");
+		}
 	}
 
+	logLoc();
 	barrier(thread);
+	logLoc();
 
 	// Create / Destroy Objects
 	if ((m_types & TYPE_SINGLE_WINDOW) != 0 && (m_types & TYPE_PBUFFER) == 0 && (m_types & TYPE_PIXMAP) == 0 && (m_types & TYPE_CONTEXT) == 0)
 	{
-		if (thread.getId() == 0)
+		if (thread.getId() == 0) {
+			logLoc("pre createDestroyObject(1)");
 			createDestroyObjects(thread, 1);
+			logLoc("pre createDestroyObject(1)");
+		}
 	}
-	else
+	else {
+		logLoc("pre createDestroyObject(100)");
 		createDestroyObjects(thread, 100);
+		logLoc("post createDestroyObject(100)");
+	}
 
 	// Push first threads objects to shared
-	if (thread.getId() == 0)
+	if (thread.getId() == 0) {
+		logLoc();
+		logLoc("pre pushObjectsToShared");
 		pushObjectsToShared(thread);
+		logLoc("post pushObjectsToShared");
+	}
 
+	logLoc();
 	barrier(thread);
+	logLoc();
+
 
 	// Push second threads objects to shared
-	if (thread.getId() == 1)
+	if (thread.getId() == 1) {
+		logLoc("pre pushObjectsToShared");
 		pushObjectsToShared(thread);
+		logLoc("post pushObjectsToShared");
+	}
 
+	logLoc();
 	barrier(thread);
+	logLoc();
 
 	// Make queries from shared surfaces
+	logLoc("pre querySetSharedObjects(100)");
 	querySetSharedObjects(thread, 100);
+	logLoc("post querySetSharedObjects(100)");
 
+	logLoc();
 	barrier(thread);
+	logLoc();
 
 	// Pull surfaces for first thread from shared surfaces
-	if (thread.getId() == 0)
+	if (thread.getId() == 0) {
+		logLoc("pre pullObjectsFromShared");
 		pullObjectsFromShared(thread, (int)(m_sharedPbuffers.size()/2), (int)(m_sharedNativePixmaps.size()/2), (int)(m_sharedNativeWindows.size()/2), (int)(m_sharedContexts.size()/2));
+		logLoc("post pullObjectsFromShared");
+	}
 
+	logLoc();
 	barrier(thread);
+	logLoc();
 
 	// Pull surfaces for second thread from shared surfaces
-	if (thread.getId() == 1)
+	if (thread.getId() == 1) {
+		logLoc("pre pullObjectsFromShared");
 		pullObjectsFromShared(thread, (int)m_sharedPbuffers.size(), (int)m_sharedNativePixmaps.size(), (int)m_sharedNativeWindows.size(), (int)m_sharedContexts.size());
+		logLoc("post pullObjectsFromShared");
+	}
 
+	logLoc();
 	barrier(thread);
+	logLoc();
 
 	// Create / Destroy Objects
-	if ((m_types & TYPE_SINGLE_WINDOW) == 0)
+	if ((m_types & TYPE_SINGLE_WINDOW) == 0) {
+		logLoc("pre createDestroyObjects(100): m_types=0x%u", m_types);
 		createDestroyObjects(thread, 100);
+		logLoc("post createDestroyObjects(100): m_types=0x%u", m_types);
+	}
 
 	// Destroy surfaces
+	logLoc();
 	destroyObjects(thread);
+	logLoc();
 
+	logLoc("return from MultiThreadedObjectTest::runThread");
 	return true;
 }
 

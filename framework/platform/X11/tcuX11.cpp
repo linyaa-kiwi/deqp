@@ -27,6 +27,11 @@
 
 #include <X11/Xutil.h>
 
+#define logLoc(FMT, ...) \
+	do { \
+		fprintf(stderr, "(pthread 0x%02lx) %s:%d: " FMT "\n", pthread_self(), __FILE__, __LINE__, ##__VA_ARGS__); \
+	} while (0)
+
 namespace tcu
 {
 namespace x11
@@ -78,6 +83,8 @@ Display::~Display (void)
 
 void Display::processEvents (void)
 {
+	logLoc("processEvents: WTF");
+
 	XEvent	event;
 
 	while (XPending(m_display))
