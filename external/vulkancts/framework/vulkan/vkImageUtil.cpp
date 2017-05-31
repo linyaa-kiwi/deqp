@@ -83,7 +83,7 @@ bool isSrgbFormat (VkFormat format)
 bool isCompressedFormat (VkFormat format)
 {
 	// update this mapping if VkFormat changes
-	DE_STATIC_ASSERT(VK_FORMAT_LAST == 185);
+	DE_STATIC_ASSERT(VK_CORE_FORMAT_LAST == 185);
 
 	switch (format)
 	{
@@ -141,10 +141,63 @@ bool isCompressedFormat (VkFormat format)
 		case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
 		case VK_FORMAT_ASTC_12x12_UNORM_BLOCK:
 		case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
+		case VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
+		case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
 			return true;
 
 		default:
 			return false;
+	}
+}
+
+bool isSupportedByFramework (VkFormat format)
+{
+	if (format == VK_FORMAT_UNDEFINED || format > VK_CORE_FORMAT_LAST)
+		return false;
+
+	switch (format)
+	{
+		case VK_FORMAT_R64_UINT:
+		case VK_FORMAT_R64_SINT:
+		case VK_FORMAT_R64_SFLOAT:
+		case VK_FORMAT_R64G64_UINT:
+		case VK_FORMAT_R64G64_SINT:
+		case VK_FORMAT_R64G64_SFLOAT:
+		case VK_FORMAT_R64G64B64_UINT:
+		case VK_FORMAT_R64G64B64_SINT:
+		case VK_FORMAT_R64G64B64_SFLOAT:
+		case VK_FORMAT_R64G64B64A64_UINT:
+		case VK_FORMAT_R64G64B64A64_SINT:
+		case VK_FORMAT_R64G64B64A64_SFLOAT:
+			// \todo [2016-12-01 pyry] Support 64-bit channel types
+			return false;
+
+		case VK_FORMAT_BC1_RGB_UNORM_BLOCK:
+		case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+		case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
+		case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+		case VK_FORMAT_BC2_UNORM_BLOCK:
+		case VK_FORMAT_BC2_SRGB_BLOCK:
+		case VK_FORMAT_BC3_UNORM_BLOCK:
+		case VK_FORMAT_BC3_SRGB_BLOCK:
+		case VK_FORMAT_BC4_UNORM_BLOCK:
+		case VK_FORMAT_BC4_SNORM_BLOCK:
+		case VK_FORMAT_BC5_UNORM_BLOCK:
+		case VK_FORMAT_BC5_SNORM_BLOCK:
+		case VK_FORMAT_BC6H_UFLOAT_BLOCK:
+		case VK_FORMAT_BC6H_SFLOAT_BLOCK:
+		case VK_FORMAT_BC7_UNORM_BLOCK:
+		case VK_FORMAT_BC7_SRGB_BLOCK:
+			return false;
+
+		default:
+			return true;
 	}
 }
 
@@ -157,7 +210,7 @@ VkFormat mapTextureFormat (const tcu::TextureFormat& format)
 #define FMT_CASE(ORDER, TYPE) PACK_FMT(tcu::TextureFormat::ORDER, tcu::TextureFormat::TYPE)
 
 	// update this mapping if VkFormat changes
-	DE_STATIC_ASSERT(VK_FORMAT_LAST == 185);
+	DE_STATIC_ASSERT(VK_CORE_FORMAT_LAST == 185);
 
 	switch (PACK_FMT(format.order, format.type))
 	{
@@ -289,7 +342,7 @@ tcu::TextureFormat mapVkFormat (VkFormat format)
 	using tcu::TextureFormat;
 
 	// update this mapping if VkFormat changes
-	DE_STATIC_ASSERT(VK_FORMAT_LAST == 185);
+	DE_STATIC_ASSERT(VK_CORE_FORMAT_LAST == 185);
 
 	switch (format)
 	{
@@ -455,7 +508,7 @@ tcu::TextureFormat mapVkFormat (VkFormat format)
 tcu::CompressedTexFormat mapVkCompressedFormat (VkFormat format)
 {
 	// update this mapping if VkFormat changes
-	DE_STATIC_ASSERT(VK_FORMAT_LAST == 185);
+	DE_STATIC_ASSERT(VK_CORE_FORMAT_LAST == 185);
 
 	switch (format)
 	{
@@ -507,7 +560,7 @@ tcu::CompressedTexFormat mapVkCompressedFormat (VkFormat format)
 static bool isScaledFormat (VkFormat format)
 {
 	// update this mapping if VkFormat changes
-	DE_STATIC_ASSERT(VK_FORMAT_LAST == 185);
+	DE_STATIC_ASSERT(VK_CORE_FORMAT_LAST == 185);
 
 	switch (format)
 	{
@@ -593,7 +646,7 @@ static bool fullTextureFormatRoundTripSupported (VkFormat format)
 
 void imageUtilSelfTest (void)
 {
-	for (int formatNdx = 0; formatNdx < VK_FORMAT_LAST; formatNdx++)
+	for (int formatNdx = 0; formatNdx < VK_CORE_FORMAT_LAST; formatNdx++)
 	{
 		const VkFormat	format	= (VkFormat)formatNdx;
 
@@ -726,7 +779,7 @@ static VkBorderColor mapBorderColor (tcu::TextureChannelClass channelClass, cons
 	return VK_BORDER_COLOR_LAST;
 }
 
-VkSamplerCreateInfo mapSampler (const tcu::Sampler& sampler, const tcu::TextureFormat& format)
+VkSamplerCreateInfo mapSampler (const tcu::Sampler& sampler, const tcu::TextureFormat& format, float minLod, float maxLod)
 {
 	const bool					compareEnabled	= (sampler.compare != tcu::Sampler::COMPAREMODE_NONE);
 	const VkCompareOp			compareOp		= (compareEnabled) ? (mapCompareMode(sampler.compare)) : (VK_COMPARE_OP_ALWAYS);
@@ -749,8 +802,8 @@ VkSamplerCreateInfo mapSampler (const tcu::Sampler& sampler, const tcu::TextureF
 		1.0f,														// maxAnisotropy
 		(VkBool32)(compareEnabled ? VK_TRUE : VK_FALSE),			// compareEnable
 		compareOp,													// compareOp
-		0.0f,														// minLod
-		(isMipmapEnabled ? 1000.0f : 0.25f),						// maxLod
+		(isMipmapEnabled ? minLod : 0.0f),							// minLod
+		(isMipmapEnabled ? maxLod : 0.25f),							// maxLod
 		borderColor,												// borderColor
 		(VkBool32)(sampler.normalizedCoords ? VK_FALSE : VK_TRUE),	// unnormalizedCoords
 	};
@@ -889,37 +942,6 @@ tcu::Sampler::FilterMode mapVkMagTexFilter (VkFilter filter)
 
 	DE_ASSERT(false);
 	return tcu::Sampler::FILTERMODE_LAST;
-}
-
-
-int mapVkComponentSwizzle (const vk::VkComponentSwizzle& channelSwizzle)
-{
-	switch (channelSwizzle)
-	{
-		case vk::VK_COMPONENT_SWIZZLE_ZERO:	return 0;
-		case vk::VK_COMPONENT_SWIZZLE_ONE:	return 1;
-		case vk::VK_COMPONENT_SWIZZLE_R:	return 2;
-		case vk::VK_COMPONENT_SWIZZLE_G:	return 3;
-		case vk::VK_COMPONENT_SWIZZLE_B:	return 4;
-		case vk::VK_COMPONENT_SWIZZLE_A:	return 5;
-		default:
-			break;
-	}
-
-	DE_ASSERT(false);
-	return 0;
-}
-
-tcu::UVec4 mapVkComponentMapping (const vk::VkComponentMapping& mapping)
-{
-	tcu::UVec4 swizzle;
-
-	swizzle.x() = mapVkComponentSwizzle(mapping.r);
-	swizzle.y() = mapVkComponentSwizzle(mapping.g);
-	swizzle.z() = mapVkComponentSwizzle(mapping.b);
-	swizzle.w() = mapVkComponentSwizzle(mapping.a);
-
-	return swizzle;
 }
 
 //! Get a format the matches the layout in buffer memory used for a

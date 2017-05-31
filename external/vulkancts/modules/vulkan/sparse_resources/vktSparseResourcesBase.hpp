@@ -19,24 +19,15 @@
  * limitations under the License.
  *
  *//*!
- * \file  vktSparseResourcesBase.hpp	
- * \brief Sparse Resources Base Instance 
+ * \file  vktSparseResourcesBase.hpp
+ * \brief Sparse Resources Base Instance
  *//*--------------------------------------------------------------------*/
 
-#include "tcuDefs.hpp"
-#include "tcuTestCase.hpp"
-#include "vktTestCaseUtil.hpp"
-#include "vktSparseResourcesTestsUtil.hpp"
-
 #include "vkDefs.hpp"
-#include "vkMemUtil.hpp"
-#include "vkPlatform.hpp"
+#include "vktTestCase.hpp"
 #include "vkRef.hpp"
-#include "vkTypeUtil.hpp"
-
-#include "deSharedPtr.hpp"
+#include "vkPlatform.hpp"
 #include "deUniquePtr.hpp"
-#include "deStringUtil.hpp"
 
 #include <map>
 #include <vector>
@@ -46,15 +37,11 @@ namespace vkt
 namespace sparse
 {
 
-enum
-{
-	NO_MATCH_FOUND = ~((deUint32)0)
-};
-
 struct Queue
 {
 	vk::VkQueue	queueHandle;
 	deUint32	queueFamilyIndex;
+	deUint32	queueIndex;
 };
 
 struct QueueRequirements
@@ -68,53 +55,25 @@ struct QueueRequirements
 	deUint32			queueCount;
 };
 
-typedef std::vector<QueueRequirements> QueueRequirementsVec;
-
 class SparseResourcesBaseInstance : public TestInstance
 {
 public:
-					SparseResourcesBaseInstance		(Context &context);
+	SparseResourcesBaseInstance (Context &context) : TestInstance(context) {}
 
 protected:
+	typedef std::vector<QueueRequirements>				QueueRequirementsVec;
 
-	typedef			std::map<vk::VkQueueFlags, std::vector<Queue> >												QueuesMap;
-	typedef			std::vector<vk::VkQueueFamilyProperties>													QueueFamilyPropertiesVec;
-	typedef			vk::Move<vk::VkDevice>																		DevicePtr;
-	typedef			de::SharedPtr< vk::Unique<vk::VkDeviceMemory> >												DeviceMemoryUniquePtr;
-
-	void			createDeviceSupportingQueues		(const QueueRequirementsVec&							queueRequirements);
-
-	const Queue&	getQueue							(const vk::VkQueueFlags									queueFlags,
-														 const deUint32											queueIndex);
-
-	deUint32		findMatchingMemoryType				(const vk::InstanceInterface&							instance,
-														 const vk::VkPhysicalDevice								physicalDevice,
-														 const vk::VkMemoryRequirements&						objectMemoryRequirements,
-														 const vk::MemoryRequirement&							memoryRequirement) const;
-
-	bool			checkSparseSupportForImageType		(const vk::InstanceInterface&							instance,
-														 const vk::VkPhysicalDevice								physicalDevice,
-														 const ImageType										imageType) const;
-
-	bool			checkSparseSupportForImageFormat	(const vk::InstanceInterface&							instance,
-														 const vk::VkPhysicalDevice								physicalDevice,
-														 const vk::VkImageCreateInfo&							imageInfo) const;
-
-	bool			checkImageFormatFeatureSupport		(const vk::InstanceInterface&							instance,
-														 const vk::VkPhysicalDevice								physicalDevice,
-														 const vk::VkFormat										format,
-														 const vk::VkFormatFeatureFlags							featureFlags) const;
-
-	deUint32		getSparseAspectRequirementsIndex	(const std::vector<vk::VkSparseImageMemoryRequirements>&requirements,
-														 const vk::VkImageAspectFlags							aspectFlags) const;
-
-	DevicePtr		m_logicalDevice;
+	void												createDeviceSupportingQueues	(const QueueRequirementsVec& queueRequirements);
+	const Queue&										getQueue						(const vk::VkQueueFlags queueFlags, const deUint32 queueIndex) const;
+	const vk::DeviceInterface&							getDeviceInterface				(void) const { return *m_deviceDriver; }
+	vk::VkDevice										getDevice						(void) const { return *m_logicalDevice; }
+	vk::Allocator&										getAllocator					(void)		 { return *m_allocator; }
 
 private:
-
-	deUint32		findMatchingQueueFamilyIndex		(const QueueFamilyPropertiesVec&						queueFamilyProperties,
-														 const vk::VkQueueFlags									queueFlags) const;
-	QueuesMap		m_queues;
+	std::map<vk::VkQueueFlags, std::vector<Queue> >		m_queues;
+	de::MovePtr<vk::DeviceDriver>						m_deviceDriver;
+	vk::Move<vk::VkDevice>								m_logicalDevice;
+	de::MovePtr<vk::Allocator>							m_allocator;
 };
 
 } // sparse

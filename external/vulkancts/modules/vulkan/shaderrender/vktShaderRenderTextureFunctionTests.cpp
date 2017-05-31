@@ -6,24 +6,17 @@
  * Copyright (c) 2016 Samsung Electronics Co., Ltd.
  * Copyright (c) 2016 The Android Open Source Project
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and/or associated documentation files (the
- * "Materials"), to deal in the Materials without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Materials, and to
- * permit persons to whom the Materials are furnished to do so, subject to
- * the following conditions:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * The above copyright notice(s) and this permission notice shall be included
- * in all copies or substantial portions of the Materials.
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * THE MATERIALS ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  *//*!
  * \file
@@ -1243,7 +1236,7 @@ static bool isValidCase (TextureType type, const tcu::IVec3& textureSize, int lo
 }
 
 static TextureBindingSp createEmptyTexture (deUint32				format,
-											TextureType 			type,
+											TextureType				type,
 											const tcu::IVec3&		textureSize,
 											int						numLevels,
 											int						lodBase,
@@ -1701,6 +1694,20 @@ TextureSamplesInstance::TextureSamplesInstance (Context&				context,
 																					&properties) == vk::VK_ERROR_FORMAT_NOT_SUPPORTED)
 			TCU_THROW(NotSupportedError, "Format not supported");
 
+		// NOTE: The test case initializes MS images (for all supported N of samples), runs a program
+		//       which invokes OpImageQuerySamples against the image and checks the result.
+		//
+		//       Now, in the SPIR-V spec for the very operation we have the following language:
+		//
+		//       OpImageQuerySamples
+		//       Query the number of samples available per texel fetch in a multisample image.
+		//       Result Type must be a scalar integer type.
+		//       The result is the number of samples.
+		//       Image must be an object whose type is OpTypeImage.
+		//       Its Dim operand must be one of 2D and **MS of 1(multisampled).
+		//
+		//       "MS of 1" implies the image must not be single-sample, meaning we must exclude
+		//       VK_SAMPLE_COUNT_1_BIT in the sampleFlags array below, and may have to skip further testing.
 		static const vk::VkSampleCountFlagBits	sampleFlags[]	=
 		{
 			vk::VK_SAMPLE_COUNT_2_BIT,
@@ -1719,7 +1726,17 @@ TextureSamplesInstance::TextureSamplesInstance (Context&				context,
 				m_iterations.push_back(flag);
 		}
 
-		DE_ASSERT(!m_iterations.empty());
+		if (m_iterations.empty())
+		{
+			// Sampled images of integer formats may support only 1 sample. Exit the test with "Not supported" in these cases.
+			if (tcu::getTextureChannelClass(mapVkFormat(format).type) == tcu::TEXTURECHANNELCLASS_UNSIGNED_INTEGER ||
+				tcu::getTextureChannelClass(mapVkFormat(format).type) == tcu::TEXTURECHANNELCLASS_SIGNED_INTEGER)
+			{
+				TCU_THROW(NotSupportedError, "Skipping validation of integer formats as only VK_SAMPLE_COUNT_1_BIT is supported.");
+			}
+
+			DE_ASSERT(false);
+		}
 	}
 
 	// setup texture
@@ -1740,7 +1757,8 @@ tcu::TestStatus TextureSamplesInstance::iterate (void)
 
 		TextureBinding::Parameters	params	= m_textures[0]->getParameters();
 
-		params.samples = m_iterations[m_iterationCounter];
+		params.initialization	= TextureBinding::INIT_CLEAR;
+		params.samples			= m_iterations[m_iterationCounter];
 		log << tcu::TestLog::Message << "Expected samples: " << m_iterations[m_iterationCounter] << tcu::TestLog::EndMessage;
 
 		m_textures[0]->setParameters(params);
@@ -2009,13 +2027,13 @@ protected:
 
 private:
 	void						initTexture						(void);
-	float						computeAccessedLod				(float computedLod) const;
+	float						computeLevelFromLod				(float computedLod) const;
 	vector<float>				computeQuadTexCoord				(void) const;
 
 	tcu::Vec4					m_minCoord;
 	tcu::Vec4					m_maxCoord;
-	float						m_level;
-	float						m_lod;
+	tcu::Vec2					m_lodBounds;
+	tcu::Vec2					m_levelBounds;
 };
 
 TextureQueryLodInstance::TextureQueryLodInstance (Context&					context,
@@ -2024,8 +2042,8 @@ TextureQueryLodInstance::TextureQueryLodInstance (Context&					context,
 	: TextureQueryInstance		(context, isVertexCase, textureSpec)
 	, m_minCoord				()
 	, m_maxCoord				()
-	, m_level					(0)
-	, m_lod						(0)
+	, m_lodBounds				()
+	, m_levelBounds				()
 {
 	// setup texture
 	initTexture();
@@ -2064,27 +2082,28 @@ TextureQueryLodInstance::TextureQueryLodInstance (Context&					context,
 	// calculate lod and accessed level
 	{
 		const tcu::UVec2&		viewportSize		= getViewportSize();
+		const float				lodEps				= (1.0f / float(1u << m_context.getDeviceProperties().limits.mipmapPrecisionBits)) + 0.008f;
 
 		switch (m_textureSpec.type)
 		{
 			case TEXTURETYPE_1D:
 			case TEXTURETYPE_1D_ARRAY:
 			{
-				float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width	/ (float)viewportSize[0];
+				const float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width	/ (float)viewportSize[0];
 
-				m_lod	= computeLodFromDerivates(DEFAULT_LOD_MODE, dudx, 0.0f);
-				m_level	= computeAccessedLod(m_lod);
+				m_lodBounds[0]		= computeLodFromDerivates(LODMODE_MIN_BOUND, dudx, 0.0f)-lodEps;
+				m_lodBounds[1]		= computeLodFromDerivates(LODMODE_MAX_BOUND, dudx, 0.0f)+lodEps;
 				break;
 			}
 
 			case TEXTURETYPE_2D:
 			case TEXTURETYPE_2D_ARRAY:
 			{
-				float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width	/ (float)viewportSize[0];
-				float	dvdy	= (m_maxCoord[1]-m_minCoord[1])*(float)m_textureSpec.height	/ (float)viewportSize[1];
+				const float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width	/ (float)viewportSize[0];
+				const float	dvdy	= (m_maxCoord[1]-m_minCoord[1])*(float)m_textureSpec.height	/ (float)viewportSize[1];
 
-				m_lod	= computeLodFromDerivates(DEFAULT_LOD_MODE, dudx, 0.0f, 0.0f, dvdy);
-				m_level	= computeAccessedLod(m_lod);
+				m_lodBounds[0]		= computeLodFromDerivates(LODMODE_MIN_BOUND, dudx, 0.0f, 0.0f, dvdy)-lodEps;
+				m_lodBounds[1]		= computeLodFromDerivates(LODMODE_MAX_BOUND, dudx, 0.0f, 0.0f, dvdy)+lodEps;
 				break;
 			}
 
@@ -2102,20 +2121,20 @@ TextureQueryLodInstance::TextureQueryLodInstance (Context&					context,
 				float						dudx	= (c10.s - c00.s)*(float)m_textureSpec.width	/ (float)viewportSize[0];
 				float						dvdy	= (c01.t - c00.t)*(float)m_textureSpec.height	/ (float)viewportSize[1];
 
-				m_lod	= computeLodFromDerivates(DEFAULT_LOD_MODE, dudx, 0.0f, 0.0f, dvdy);
-				m_level	= computeAccessedLod(m_lod);
+				m_lodBounds[0]		= computeLodFromDerivates(LODMODE_MIN_BOUND, dudx, 0.0f, 0.0f, dvdy)-lodEps;
+				m_lodBounds[1]		= computeLodFromDerivates(LODMODE_MAX_BOUND, dudx, 0.0f, 0.0f, dvdy)+lodEps;
 				break;
 			}
 
 			case TEXTURETYPE_3D:
 			{
-				float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width		/ (float)viewportSize[0];
-				float	dvdy	= (m_maxCoord[1]-m_minCoord[1])*(float)m_textureSpec.height		/ (float)viewportSize[1];
-				float	dwdx	= (m_maxCoord[2]-m_minCoord[2])*0.5f*(float)m_textureSpec.depth	/ (float)viewportSize[0];
-				float	dwdy	= (m_maxCoord[2]-m_minCoord[2])*0.5f*(float)m_textureSpec.depth	/ (float)viewportSize[1];
+				const float	dudx	= (m_maxCoord[0]-m_minCoord[0])*(float)m_textureSpec.width		/ (float)viewportSize[0];
+				const float	dvdy	= (m_maxCoord[1]-m_minCoord[1])*(float)m_textureSpec.height		/ (float)viewportSize[1];
+				const float	dwdx	= (m_maxCoord[2]-m_minCoord[2])*0.5f*(float)m_textureSpec.depth	/ (float)viewportSize[0];
+				const float	dwdy	= (m_maxCoord[2]-m_minCoord[2])*0.5f*(float)m_textureSpec.depth	/ (float)viewportSize[1];
 
-				m_lod	= computeLodFromDerivates(DEFAULT_LOD_MODE, dudx, 0.0f, dwdx, 0.0f, dvdy, dwdy);
-				m_level	= computeAccessedLod(m_lod);
+				m_lodBounds[0]		= computeLodFromDerivates(LODMODE_MIN_BOUND, dudx, 0.0f, dwdx, 0.0f, dvdy, dwdy)-lodEps;
+				m_lodBounds[1]		= computeLodFromDerivates(LODMODE_MAX_BOUND, dudx, 0.0f, dwdx, 0.0f, dvdy, dwdy)+lodEps;
 				break;
 			}
 
@@ -2123,6 +2142,9 @@ TextureQueryLodInstance::TextureQueryLodInstance (Context&					context,
 				DE_ASSERT(false);
 				break;
 		}
+
+		m_levelBounds[0] = computeLevelFromLod(m_lodBounds[0]);
+		m_levelBounds[1] = computeLevelFromLod(m_lodBounds[1]);
 	}
 }
 
@@ -2134,18 +2156,19 @@ tcu::TestStatus TextureQueryLodInstance::iterate (void)
 {
 	tcu::TestLog&		log		= m_context.getTestContext().getLog();
 
-	log << tcu::TestLog::Message << "Expected: level: " << m_level << ", lod: " << m_lod << tcu::TestLog::EndMessage;
+	log << tcu::TestLog::Message << "Expected: level in range " << m_levelBounds << ", lod in range " << m_lodBounds << tcu::TestLog::EndMessage;
 
 	// render
 	TextureQueryInstance::render();
 
 	// test
 	{
-		const float					tolerance			= 0.01f;
-		const tcu::TextureLevel&	result				= getResultImage();
-		tcu::Vec4					output				= result.getAccess().getPixel(0, 0);
+		const tcu::TextureLevel&	result		= getResultImage();
+		const tcu::Vec4				output		= result.getAccess().getPixel(0, 0);
+		const float					resLevel	= output.x();
+		const float					resLod		= output.y();
 
-		if ((de::abs(output.x() - m_level) < tolerance) && (de::abs(output.y() - m_lod) < tolerance))
+		if (de::inRange(resLevel, m_levelBounds[0], m_levelBounds[1]) && de::inRange(resLod, m_lodBounds[0], m_lodBounds[1]))
 		{
 			// success
 			log << tcu::TestLog::Message << "Passed" << tcu::TestLog::EndMessage;
@@ -2154,7 +2177,7 @@ tcu::TestStatus TextureQueryLodInstance::iterate (void)
 		else
 		{
 			// failure
-			log << tcu::TestLog::Message << "Result: level: " << output.x() << ", lod: " << output.y() << tcu::TestLog::EndMessage;
+			log << tcu::TestLog::Message << "Result: level: " << resLevel << ", lod: " << resLod << tcu::TestLog::EndMessage;
 			log << tcu::TestLog::Message << "Failed" << tcu::TestLog::EndMessage;
 			return tcu::TestStatus::fail("Got unexpected result");
 		}
@@ -2196,7 +2219,7 @@ void TextureQueryLodInstance::initTexture (void)
 	m_textures.push_back(textureBinding);
 }
 
-float TextureQueryLodInstance::computeAccessedLod (float computedLod) const
+float TextureQueryLodInstance::computeLevelFromLod (float computedLod) const
 {
 	const int	maxAccessibleLevel	= m_textureSpec.numLevels - 1;
 
@@ -2321,7 +2344,7 @@ void TextureQueryCase::initShaderSources (void)
 	std::ostringstream		vert;
 	std::ostringstream		frag;
 	std::ostringstream&		op			= m_isVertexCase ? vert : frag;
-	glu::GLSLVersion 		version		= glu::GLSL_VERSION_LAST;
+	glu::GLSLVersion		version		= glu::GLSL_VERSION_LAST;
 
 	DE_ASSERT(m_function != QUERYFUNCTION_TEXTUREQUERYLOD || !m_isVertexCase);
 
@@ -2526,7 +2549,7 @@ public:
 																TexEvalFunc					evalFunc,
 																bool						isVertexCase);
 
-	virtual 				~SparseShaderTextureFunctionCase	(void);
+	virtual					~SparseShaderTextureFunctionCase	(void);
 
 	virtual	TestInstance*	createInstance						(Context& context) const;
 protected:
@@ -2540,7 +2563,7 @@ SparseShaderTextureFunctionCase::SparseShaderTextureFunctionCase (tcu::TestConte
 																  const TextureSpec&			texture,
 																  TexEvalFunc					evalFunc,
 																  bool							isVertexCase)
-	: ShaderTextureFunctionCase 	(testCtx, name, desc, lookup, texture, evalFunc, isVertexCase)
+	: ShaderTextureFunctionCase		(testCtx, name, desc, lookup, texture, evalFunc, isVertexCase)
 {
 	initShaderSources();
 }
@@ -3028,14 +3051,14 @@ void ShaderTextureFunctionTests::init (void)
 		CASE_SPEC(isampler2darray_bias,			FUNCTION_TEXTURE,	Vec4(-1.2f, -0.4f,  -0.5f,  0.0f),	Vec4( 1.5f,  2.3f,  3.5f,  0.0f),	true,	-2.0f,	2.0f,	true,	IVec3(-8, 7, 0),	tex2DArrayInt,			evalTexture2DArrayOffsetBias,	FRAGMENT),
 		CASE_SPEC(usampler2darray_bias,			FUNCTION_TEXTURE,	Vec4(-1.2f, -0.4f,  -0.5f,  0.0f),	Vec4( 1.5f,  2.3f,  3.5f,  0.0f),	true,	-2.0f,	2.0f,	true,	IVec3(7, -8, 0),	tex2DArrayUint,			evalTexture2DArrayOffsetBias,	FRAGMENT),
 
-		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DOffset,			VERTEX),
-		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapFixed,		evalTexture3DOffset,			FRAGMENT),
-		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DFloat,				evalTexture3DOffset,			VERTEX),
-		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DMipmapFloat,		evalTexture3DOffset,			FRAGMENT),
-		CASE_SPEC(isampler3d,					FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DInt,				evalTexture3DOffset,			VERTEX),
-		CASE_SPEC(isampler3d,					FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DMipmapInt,			evalTexture3DOffset,			FRAGMENT),
-		CASE_SPEC(usampler3d,					FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DUint,				evalTexture3DOffset,			VERTEX),
-		CASE_SPEC(usampler3d,					FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapUint,		evalTexture3DOffset,			FRAGMENT),
+		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DOffset,			VERTEX),
+		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapFixed,		evalTexture3DOffset,			FRAGMENT),
+		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DFloat,				evalTexture3DOffset,			VERTEX),
+		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DMipmapFloat,		evalTexture3DOffset,			FRAGMENT),
+		CASE_SPEC(isampler3d,					FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DInt,				evalTexture3DOffset,			VERTEX),
+		CASE_SPEC(isampler3d,					FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DMipmapInt,			evalTexture3DOffset,			FRAGMENT),
+		CASE_SPEC(usampler3d,					FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DUint,				evalTexture3DOffset,			VERTEX),
+		CASE_SPEC(usampler3d,					FUNCTION_TEXTURE,	Vec4(-0.2f, -0.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapUint,		evalTexture3DOffset,			FRAGMENT),
 
 		CASE_SPEC(sampler3d_bias_fixed,			FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	true,	-2.0f,	1.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DOffsetBias,		FRAGMENT),
 		CASE_SPEC(sampler3d_bias_float,			FUNCTION_TEXTURE,	Vec4(-1.2f, -1.4f,  0.1f,  0.0f),	Vec4( 1.5f,  2.3f,  2.3f,  0.0f),	true,	-2.0f,	1.0f,	true,	IVec3(7, 3, -8),	tex3DFloat,				evalTexture3DOffsetBias,		FRAGMENT),
@@ -3134,14 +3157,14 @@ void ShaderTextureFunctionTests::init (void)
 		CASE_SPEC(isampler2d_vec4_bias,			FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  0.0f,  1.5f),	true,	-2.0f,	2.0f,	true,	IVec3(-8, 7, 0),	tex2DInt,				evalTexture2DProjOffsetBias,	FRAGMENT),
 		CASE_SPEC(usampler2d_vec4_bias,			FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  0.0f,  1.5f),	true,	-2.0f,	2.0f,	true,	IVec3(7, -8, 0),	tex2DUint,				evalTexture2DProjOffsetBias,	FRAGMENT),
 
-		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DProjOffset,		VERTEX),
-		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapFixed,		evalTexture3DProjOffset,		FRAGMENT),
-		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DFloat,				evalTexture3DProjOffset,		VERTEX),
-		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DMipmapFloat,		evalTexture3DProjOffset,		FRAGMENT),
-		CASE_SPEC(isampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DInt,				evalTexture3DProjOffset,		VERTEX),
-		CASE_SPEC(isampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DMipmapInt,			evalTexture3DProjOffset,		FRAGMENT),
-		CASE_SPEC(usampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DUint,				evalTexture3DProjOffset,		VERTEX),
-		CASE_SPEC(usampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapUint,		evalTexture3DProjOffset,		FRAGMENT),
+		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DProjOffset,		VERTEX),
+		CASE_SPEC(sampler3d_fixed,				FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapFixed,		evalTexture3DProjOffset,		FRAGMENT),
+		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DFloat,				evalTexture3DProjOffset,		VERTEX),
+		CASE_SPEC(sampler3d_float,				FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DMipmapFloat,		evalTexture3DProjOffset,		FRAGMENT),
+		CASE_SPEC(isampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DInt,				evalTexture3DProjOffset,		VERTEX),
+		CASE_SPEC(isampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(3, -8, 7),	tex3DMipmapInt,			evalTexture3DProjOffset,		FRAGMENT),
+		CASE_SPEC(usampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(-8, 7, 3),	tex3DUint,				evalTexture3DProjOffset,		VERTEX),
+		CASE_SPEC(usampler3d,					FUNCTION_TEXTUREPROJ,	Vec4(-0.3f, -0.6f,  0.0f,  1.5f),	Vec4(2.25f, 3.45f,  2.0f,  1.5f),	false,	0.0f,	0.0f,	true,	IVec3(7, 3, -8),	tex3DMipmapUint,		evalTexture3DProjOffset,		FRAGMENT),
 
 		CASE_SPEC(sampler3d_bias_fixed,			FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	true,	-2.0f,	2.0f,	true,	IVec3(-8, 7, 3),	tex3DFixed,				evalTexture3DProjOffsetBias,	FRAGMENT),
 		CASE_SPEC(sampler3d_bias_float,			FUNCTION_TEXTUREPROJ,	Vec4(0.9f, 1.05f, -0.08f, -0.75f),	Vec4(-1.13f, -1.7f, -1.7f, -0.75f),	true,	-2.0f,	2.0f,	true,	IVec3(7, 3, -8),	tex3DFloat,				evalTexture3DProjOffsetBias,	FRAGMENT),

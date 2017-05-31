@@ -59,7 +59,6 @@
 #include "vktShaderRenderTextureGatherTests.hpp"
 #include "vktShaderBuiltinTests.hpp"
 #include "vktOpaqueTypeIndexingTests.hpp"
-#include "vktTextureFilteringTests.hpp"
 #include "vktUniformBlockTests.hpp"
 #include "vktDynamicStateTests.hpp"
 #include "vktSSBOLayoutTests.hpp"
@@ -74,6 +73,9 @@
 #include "vktTessellationTests.hpp"
 #include "vktRasterizationTests.hpp"
 #include "vktClippingTests.hpp"
+#include "vktFragmentOperationsTests.hpp"
+#include "vktTextureTests.hpp"
+#include "vktGeometryTests.hpp"
 
 #include <vector>
 #include <sstream>
@@ -374,12 +376,12 @@ void TestPackage::init (void)
 {
 	addChild(createTestGroup				(m_testCtx, "info", "Build and Device Info Tests", createInfoTests));
 	addChild(api::createTests				(m_testCtx));
+	addChild(memory::createTests			(m_testCtx));
 	addChild(pipeline::createTests			(m_testCtx));
 	addChild(BindingModel::createTests		(m_testCtx));
 	addChild(SpirVAssembly::createTests		(m_testCtx));
 	addChild(createTestGroup				(m_testCtx, "glsl", "GLSL shader execution tests", createGlslTests));
 	addChild(createRenderPassTests			(m_testCtx));
-	addChild(memory::createTests			(m_testCtx));
 	addChild(ubo::createTests				(m_testCtx));
 	addChild(DynamicState::createTests		(m_testCtx));
 	addChild(ssbo::createTests				(m_testCtx));
@@ -393,7 +395,9 @@ void TestPackage::init (void)
 	addChild(tessellation::createTests		(m_testCtx));
 	addChild(rasterization::createTests		(m_testCtx));
 	addChild(clipping::createTests			(m_testCtx));
-	addChild(texture_filtering::createTests	(m_testCtx));
+	addChild(FragmentOperations::createTests(m_testCtx));
+	addChild(texture::createTests			(m_testCtx));
+	addChild(geometry::createTests			(m_testCtx));
 }
 
 } // vkt

@@ -44,9 +44,9 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/qpReleaseInfo.inl")
 	set(USE_RELEASE_INFO_FILE ON)
 
 elseif (EXISTS "${CMAKE_SOURCE_DIR}/.git")
-	find_program(PYTHON_BIN python)
+	find_package(PythonInterp 2.7)
 
-	if (PYTHON_BIN)
+	if (PYTHON_EXECUTABLE)
 		message(STATUS "Using git revision as release identifier")
 
 		execute_process(COMMAND git rev-parse --git-dir
@@ -54,7 +54,7 @@ elseif (EXISTS "${CMAKE_SOURCE_DIR}/.git")
 						OUTPUT_VARIABLE DE_GIT_DIR
 						OUTPUT_STRIP_TRAILING_WHITESPACE)
 		add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/qpReleaseInfo.inl
-						   COMMAND ${PYTHON_BIN} -B ${CMAKE_CURRENT_SOURCE_DIR}/gen_release_info.py --git --git-dir="${DE_GIT_DIR}" --out=${CMAKE_CURRENT_BINARY_DIR}/qpReleaseInfo.inl
+							COMMAND ${PYTHON_EXECUTABLE} -B ${CMAKE_CURRENT_SOURCE_DIR}/gen_release_info.py --git --git-dir="${DE_GIT_DIR}" --out=${CMAKE_CURRENT_BINARY_DIR}/qpReleaseInfo.inl
 						   DEPENDS gen_release_info.py ${DE_GIT_DIR}/HEAD ${DE_GIT_DIR}/index) # \note HEAD updated only when changing branches
 		add_custom_target(git-rel-info DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/qpReleaseInfo.inl)
 		add_dependencies(qphelper git-rel-info)

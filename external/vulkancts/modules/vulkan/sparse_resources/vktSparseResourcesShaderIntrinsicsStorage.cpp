@@ -55,6 +55,11 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 	// Create compute program
 	std::ostringstream	src;
 
+	const std::string	typeImgComp					= getImageComponentTypeName(m_format);
+	const std::string	typeImgCompVec4				= getImageComponentVec4TypeName(m_format);
+	const std::string	typeImageSparse				= getSparseImageTypeName();
+	const std::string	typeUniformConstImageSparse	= getUniformConstSparseImageTypeName();
+
 	src << "OpCapability Shader\n"
 		<< "OpCapability ImageCubeArray\n"
 		<< "OpCapability SparseResidency\n"
@@ -99,43 +104,42 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 		<< "OpDecorate %uniform_image_residency NonReadable\n"
 
 		// Declare data types
-		<< "%type_bool 						= OpTypeBool\n"
-		<< "%type_int 						= OpTypeInt 32 1\n"
-		<< "%type_uint 						= OpTypeInt 32 0\n"
-		<< "%type_ivec2 					= OpTypeVector %type_int  2\n"
-		<< "%type_ivec3 					= OpTypeVector %type_int  3\n"
-		<< "%type_uvec3 					= OpTypeVector %type_uint 3\n"
-		<< "%type_uvec4 					= OpTypeVector %type_uint 4\n"
-		<< "%type_img_comp					= " << getOpTypeImageComponent(m_format) << "\n"
-		<< "%type_img_comp_vec4 			= OpTypeVector %type_img_comp 4\n"
-		<< "%type_struct_int_img_comp_vec4 	= OpTypeStruct %type_int %type_img_comp_vec4\n"
+		<< "%type_bool						= OpTypeBool\n"
+		<< "%type_int						= OpTypeInt 32 1\n"
+		<< "%type_uint						= OpTypeInt 32 0\n"
+		<< "%type_ivec2						= OpTypeVector %type_int  2\n"
+		<< "%type_ivec3						= OpTypeVector %type_int  3\n"
+		<< "%type_ivec4						= OpTypeVector %type_int  4\n"
+		<< "%type_uvec3						= OpTypeVector %type_uint 3\n"
+		<< "%type_uvec4						= OpTypeVector %type_uint 4\n"
+		<< "%type_struct_int_img_comp_vec4	= OpTypeStruct %type_int " << typeImgCompVec4 << "\n"
 
-		<< "%type_input_uint 		= OpTypePointer Input %type_uint\n"
-		<< "%type_input_uvec3 		= OpTypePointer Input %type_uvec3\n"
+		<< "%type_input_uint		= OpTypePointer Input %type_uint\n"
+		<< "%type_input_uvec3		= OpTypePointer Input %type_uvec3\n"
 
 		<< "%type_function_int			 = OpTypePointer Function %type_int\n"
-		<< "%type_function_img_comp_vec4 = OpTypePointer Function %type_img_comp_vec4\n"
+		<< "%type_function_img_comp_vec4 = OpTypePointer Function " << typeImgCompVec4 << "\n"
 
-		<< "%type_void 				= OpTypeVoid\n"
-		<< "%type_void_func 		= OpTypeFunction %type_void\n"
+		<< "%type_void				= OpTypeVoid\n"
+		<< "%type_void_func			= OpTypeFunction %type_void\n"
 
-		// Sparse image type declaration
-		<< sparseImageTypeDecl("%type_image_sparse", "%type_img_comp")
-		<< "%type_uniformconst_image_sparse		= OpTypePointer UniformConstant %type_image_sparse\n"
+		// Sparse image without sampler type declaration
+		<< "%type_image_sparse = " << getOpTypeImageSparse(m_imageType, m_format, typeImgComp, false) << "\n"
+		<< "%type_uniformconst_image_sparse = OpTypePointer UniformConstant %type_image_sparse\n"
 
-		// Texels image type declaration
-		<< "%type_image_texels					= " << getOpTypeImageSparse(m_imageType, m_format, "%type_img_comp", false) << "\n"
-		<< "%type_uniformconst_image_texels		= OpTypePointer UniformConstant %type_image_texels\n"
+		// Sparse image with sampler type declaration
+		<< "%type_image_sparse_with_sampler = " << getOpTypeImageSparse(m_imageType, m_format, typeImgComp, true) << "\n"
+		<< "%type_uniformconst_image_sparse_with_sampler = OpTypePointer UniformConstant %type_image_sparse_with_sampler\n"
 
 		// Residency image type declaration
 		<< "%type_image_residency				= " << getOpTypeImageResidency(m_imageType) << "\n"
 		<< "%type_uniformconst_image_residency	= OpTypePointer UniformConstant %type_image_residency\n"
 
 		// Declare sparse image variable
-		<< "%uniform_image_sparse = OpVariable %type_uniformconst_image_sparse UniformConstant\n"
+		<< "%uniform_image_sparse = OpVariable " << typeUniformConstImageSparse << " UniformConstant\n"
 
 		// Declare output image variable for storing texels
-		<< "%uniform_image_texels = OpVariable %type_uniformconst_image_texels UniformConstant\n"
+		<< "%uniform_image_texels = OpVariable %type_uniformconst_image_sparse UniformConstant\n"
 
 		// Declare output image variable for storing residency information
 		<< "%uniform_image_residency = OpVariable %type_uniformconst_image_residency UniformConstant\n"
@@ -143,9 +147,9 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 		// Declare input variables
 		<< "%input_GlobalInvocationID = OpVariable %type_input_uvec3 Input\n"
 
-		<< "%constant_uint_grid_x 				= OpSpecConstant %type_uint 1\n"
-		<< "%constant_uint_grid_y 				= OpSpecConstant %type_uint 1\n"
-		<< "%constant_uint_grid_z 				= OpSpecConstant %type_uint 1\n"
+		<< "%constant_uint_grid_x				= OpSpecConstant %type_uint 1\n"
+		<< "%constant_uint_grid_y				= OpSpecConstant %type_uint 1\n"
+		<< "%constant_uint_grid_z				= OpSpecConstant %type_uint 1\n"
 
 		<< "%constant_uint_work_group_size_x	= OpSpecConstant %type_uint 1\n"
 		<< "%constant_uint_work_group_size_y	= OpSpecConstant %type_uint 1\n"
@@ -153,36 +157,36 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 		<< "%input_WorkGroupSize = OpSpecConstantComposite %type_uvec3 %constant_uint_work_group_size_x %constant_uint_work_group_size_y %constant_uint_work_group_size_z\n"
 
 		// Declare constants
-		<< "%constant_uint_0 				= OpConstant %type_uint 0\n"
-		<< "%constant_uint_1 				= OpConstant %type_uint 1\n"
-		<< "%constant_uint_2 				= OpConstant %type_uint 2\n"
-		<< "%constant_int_0  				= OpConstant %type_int 0\n"
-		<< "%constant_int_1  				= OpConstant %type_int 1\n"
-		<< "%constant_int_2  				= OpConstant %type_int 2\n"
+		<< "%constant_uint_0				= OpConstant %type_uint 0\n"
+		<< "%constant_uint_1				= OpConstant %type_uint 1\n"
+		<< "%constant_uint_2				= OpConstant %type_uint 2\n"
+		<< "%constant_int_0					= OpConstant %type_int 0\n"
+		<< "%constant_int_1					= OpConstant %type_int 1\n"
+		<< "%constant_int_2					= OpConstant %type_int 2\n"
 		<< "%constant_bool_true				= OpConstantTrue %type_bool\n"
-		<< "%constant_uint_resident 		= OpConstant %type_uint " << MEMORY_BLOCK_BOUND_VALUE << "\n"
+		<< "%constant_uint_resident			= OpConstant %type_uint " << MEMORY_BLOCK_BOUND_VALUE << "\n"
 		<< "%constant_uvec4_resident		= OpConstantComposite %type_uvec4 %constant_uint_resident %constant_uint_resident %constant_uint_resident %constant_uint_resident\n"
 		<< "%constant_uint_not_resident		= OpConstant %type_uint " << MEMORY_BLOCK_NOT_BOUND_VALUE << "\n"
 		<< "%constant_uvec4_not_resident	= OpConstantComposite %type_uvec4 %constant_uint_not_resident %constant_uint_not_resident %constant_uint_not_resident %constant_uint_not_resident\n"
 
 		// Call main function
-		<< "%func_main 		 = OpFunction %type_void None %type_void_func\n"
+		<< "%func_main		 = OpFunction %type_void None %type_void_func\n"
 		<< "%label_func_main = OpLabel\n"
 
 		// Load GlobalInvocationID.xyz into local variables
-		<< "%access_GlobalInvocationID_x 		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_0\n"
-		<< "%local_uint_GlobalInvocationID_x 	= OpLoad %type_uint %access_GlobalInvocationID_x\n"
-		<< "%local_int_GlobalInvocationID_x 	= OpBitcast %type_int %local_uint_GlobalInvocationID_x\n"
+		<< "%access_GlobalInvocationID_x		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_0\n"
+		<< "%local_uint_GlobalInvocationID_x	= OpLoad %type_uint %access_GlobalInvocationID_x\n"
+		<< "%local_int_GlobalInvocationID_x		= OpBitcast %type_int %local_uint_GlobalInvocationID_x\n"
 
-		<< "%access_GlobalInvocationID_y 		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_1\n"
-		<< "%local_uint_GlobalInvocationID_y 	= OpLoad %type_uint %access_GlobalInvocationID_y\n"
-		<< "%local_int_GlobalInvocationID_y 	= OpBitcast %type_int %local_uint_GlobalInvocationID_y\n"
+		<< "%access_GlobalInvocationID_y		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_1\n"
+		<< "%local_uint_GlobalInvocationID_y	= OpLoad %type_uint %access_GlobalInvocationID_y\n"
+		<< "%local_int_GlobalInvocationID_y		= OpBitcast %type_int %local_uint_GlobalInvocationID_y\n"
 
-		<< "%access_GlobalInvocationID_z 		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_2\n"
-		<< "%local_uint_GlobalInvocationID_z 	= OpLoad %type_uint %access_GlobalInvocationID_z\n"
-		<< "%local_int_GlobalInvocationID_z 	= OpBitcast %type_int %local_uint_GlobalInvocationID_z\n"
+		<< "%access_GlobalInvocationID_z		= OpAccessChain %type_input_uint %input_GlobalInvocationID %constant_uint_2\n"
+		<< "%local_uint_GlobalInvocationID_z	= OpLoad %type_uint %access_GlobalInvocationID_z\n"
+		<< "%local_int_GlobalInvocationID_z		= OpBitcast %type_int %local_uint_GlobalInvocationID_z\n"
 
-		<< "%local_ivec2_GlobalInvocationID_xy 	= OpCompositeConstruct %type_ivec2 %local_int_GlobalInvocationID_x %local_int_GlobalInvocationID_y\n"
+		<< "%local_ivec2_GlobalInvocationID_xy	= OpCompositeConstruct %type_ivec2 %local_int_GlobalInvocationID_x %local_int_GlobalInvocationID_y\n"
 		<< "%local_ivec3_GlobalInvocationID_xyz = OpCompositeConstruct %type_ivec3 %local_int_GlobalInvocationID_x %local_int_GlobalInvocationID_y %local_int_GlobalInvocationID_z\n"
 
 		<< "%comparison_range_x = OpULessThan %type_bool %local_uint_GlobalInvocationID_x %constant_uint_grid_x\n"
@@ -201,20 +205,20 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 		<< "%label_in_range_z = OpLabel\n"
 
 		// Load sparse image
-		<< "%local_image_sparse = OpLoad %type_image_sparse %uniform_image_sparse\n"
+		<< "%local_image_sparse = OpLoad " << typeImageSparse << " %uniform_image_sparse\n"
 
 		// Call OpImageSparse*
 		<< sparseImageOpString("%local_sparse_op_result", "%type_struct_int_img_comp_vec4", "%local_image_sparse", coordString, "%constant_int_0") << "\n"
 
 		// Load the texel from the sparse image to local variable for OpImageSparse*
-		<< "%local_img_comp_vec4 = OpCompositeExtract %type_img_comp_vec4 %local_sparse_op_result 1\n"
+		<< "%local_img_comp_vec4 = OpCompositeExtract " << typeImgCompVec4 << " %local_sparse_op_result 1\n"
 
 		// Load residency code for OpImageSparse*
 		<< "%local_residency_code = OpCompositeExtract %type_int %local_sparse_op_result 0\n"
 		// End Call OpImageSparse*
 
 		// Load texels image
-		<< "%local_image_texels = OpLoad %type_image_texels %uniform_image_texels\n"
+		<< "%local_image_texels = OpLoad %type_image_sparse %uniform_image_texels\n"
 
 		// Write the texel to output image via OpImageWrite
 		<< "OpImageWrite %local_image_texels " << coordString << " %local_img_comp_vec4\n"
@@ -255,13 +259,14 @@ void SparseShaderIntrinsicsCaseStorage::initPrograms (vk::SourceCollections& pro
 	programCollection.spirvAsmSources.add("compute") << src.str();
 }
 
-std::string SparseCaseOpImageSparseFetch::sparseImageTypeDecl (const std::string& imageType, const std::string& componentType) const
+std::string	SparseCaseOpImageSparseFetch::getSparseImageTypeName (void) const
 {
-	std::ostringstream src;
+	return "%type_image_sparse_with_sampler";
+}
 
-	src << imageType << " = " << getOpTypeImageSparse(m_imageType, m_format, componentType, true) << "\n";
-
-	return src.str();
+std::string	SparseCaseOpImageSparseFetch::getUniformConstSparseImageTypeName (void) const
+{
+	return "%type_uniformconst_image_sparse_with_sampler";
 }
 
 std::string	SparseCaseOpImageSparseFetch::sparseImageOpString  (const std::string& resultVariable,
@@ -277,13 +282,14 @@ std::string	SparseCaseOpImageSparseFetch::sparseImageOpString  (const std::strin
 	return src.str();
 }
 
-std::string SparseCaseOpImageSparseRead::sparseImageTypeDecl (const std::string& imageType, const std::string& componentType) const
+std::string	SparseCaseOpImageSparseRead::getSparseImageTypeName (void) const
 {
-	std::ostringstream src;
+	return "%type_image_sparse";
+}
 
-	src << imageType << " = " << getOpTypeImageSparse(m_imageType, m_format, componentType, false) << "\n";
-
-	return src.str();
+std::string	SparseCaseOpImageSparseRead::getUniformConstSparseImageTypeName (void) const
+{
+	return "%type_uniformconst_image_sparse";
 }
 
 std::string	SparseCaseOpImageSparseRead::sparseImageOpString (const std::string& resultVariable,
@@ -315,8 +321,7 @@ public:
 
 	VkQueueFlags					getQueueFlags			(void) const;
 
-	void							recordCommands			(vk::Allocator&				allocator,
-															 const VkCommandBuffer		commandBuffer,
+	void							recordCommands			(const VkCommandBuffer		commandBuffer,
 															 const VkImageCreateInfo&	imageSparseInfo,
 															 const VkImage				imageSparse,
 															 const VkImage				imageTexels,
@@ -335,18 +340,15 @@ VkQueueFlags SparseShaderIntrinsicsInstanceStorage::getQueueFlags (void) const
 	return VK_QUEUE_COMPUTE_BIT;
 }
 
-void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				allocator,
-															const VkCommandBuffer		commandBuffer,
+void SparseShaderIntrinsicsInstanceStorage::recordCommands (const VkCommandBuffer		commandBuffer,
 															const VkImageCreateInfo&	imageSparseInfo,
 															const VkImage				imageSparse,
 															const VkImage				imageTexels,
 															const VkImage				imageResidency)
 {
 	const InstanceInterface&	instance		= m_context.getInstanceInterface();
-	const DeviceInterface&		deviceInterface = m_context.getDeviceInterface();
+	const DeviceInterface&		deviceInterface = getDeviceInterface();
 	const VkPhysicalDevice		physicalDevice	= m_context.getPhysicalDevice();
-
-	DE_UNREF(allocator);
 
 	// Check if device supports image format for storage image
 	if (!checkImageFormatFeatureSupport(instance, physicalDevice, imageSparseInfo.format, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
@@ -369,10 +371,10 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 	descriptorLayerBuilder.addSingleBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
 	descriptorLayerBuilder.addSingleBinding(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, VK_SHADER_STAGE_COMPUTE_BIT);
 
-	const Unique<VkDescriptorSetLayout> descriptorSetLayout(descriptorLayerBuilder.build(deviceInterface, *m_logicalDevice));
+	const Unique<VkDescriptorSetLayout> descriptorSetLayout(descriptorLayerBuilder.build(deviceInterface, getDevice()));
 
 	// Create pipeline layout
-	const Unique<VkPipelineLayout> pipelineLayout(makePipelineLayout(deviceInterface, *m_logicalDevice, *descriptorSetLayout));
+	const Unique<VkPipelineLayout> pipelineLayout(makePipelineLayout(deviceInterface, getDevice(), *descriptorSetLayout));
 
 	// Create descriptor pool
 	DescriptorPoolBuilder descriptorPoolBuilder;
@@ -381,7 +383,7 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 	descriptorPoolBuilder.addType(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, imageSparseInfo.mipLevels);
 	descriptorPoolBuilder.addType(VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, imageSparseInfo.mipLevels);
 
-	descriptorPool = descriptorPoolBuilder.build(deviceInterface, *m_logicalDevice, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, imageSparseInfo.mipLevels);
+	descriptorPool = descriptorPoolBuilder.build(deviceInterface, getDevice(), VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, imageSparseInfo.mipLevels);
 
 	const VkImageSubresourceRange fullImageSubresourceRange = makeImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0u, imageSparseInfo.mipLevels, 0u, imageSparseInfo.arrayLayers);
 
@@ -431,7 +433,7 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 		{ 6u, 5u * (deUint32)sizeof(deUint32), sizeof(deUint32) }, // WorkGroupSize.z
 	};
 
-	Unique<VkShaderModule> shaderModule(createShaderModule(deviceInterface, *m_logicalDevice, m_context.getBinaryCollection().get("compute"), 0u));
+	Unique<VkShaderModule> shaderModule(createShaderModule(deviceInterface, getDevice(), m_context.getBinaryCollection().get("compute"), 0u));
 
 	for (deUint32 mipLevelNdx = 0u; mipLevelNdx < imageSparseInfo.mipLevels; ++mipLevelNdx)
 	{
@@ -448,25 +450,25 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 		};
 
 		// Create and bind compute pipeline
-		pipelines[mipLevelNdx] = makeVkSharedPtr(makeComputePipeline(deviceInterface, *m_logicalDevice, *pipelineLayout, *shaderModule, &specializationInfo));
+		pipelines[mipLevelNdx] = makeVkSharedPtr(makeComputePipeline(deviceInterface, getDevice(), *pipelineLayout, *shaderModule, &specializationInfo));
 		const VkPipeline computePipeline = **pipelines[mipLevelNdx];
 
 		deviceInterface.cmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
 
 		// Create descriptor set
-		descriptorSets[mipLevelNdx] = makeVkSharedPtr(makeDescriptorSet(deviceInterface, *m_logicalDevice, *descriptorPool, *descriptorSetLayout));
+		descriptorSets[mipLevelNdx] = makeVkSharedPtr(makeDescriptorSet(deviceInterface, getDevice(), *descriptorPool, *descriptorSetLayout));
 		const VkDescriptorSet descriptorSet = **descriptorSets[mipLevelNdx];
 
 		// Bind resources
 		const VkImageSubresourceRange mipLevelRange = makeImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, mipLevelNdx, 1u, 0u, imageSparseInfo.arrayLayers);
 
-		imageSparseViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, *m_logicalDevice, imageSparse, mapImageViewType(m_imageType), imageSparseInfo.format, mipLevelRange));
+		imageSparseViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, getDevice(), imageSparse, mapImageViewType(m_imageType), imageSparseInfo.format, mipLevelRange));
 		const VkDescriptorImageInfo imageSparseDescInfo = makeDescriptorImageInfo(DE_NULL, **imageSparseViews[mipLevelNdx], VK_IMAGE_LAYOUT_GENERAL);
 
-		imageTexelsViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, *m_logicalDevice, imageTexels, mapImageViewType(m_imageType), imageSparseInfo.format, mipLevelRange));
+		imageTexelsViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, getDevice(), imageTexels, mapImageViewType(m_imageType), imageSparseInfo.format, mipLevelRange));
 		const VkDescriptorImageInfo imageTexelsDescInfo = makeDescriptorImageInfo(DE_NULL, **imageTexelsViews[mipLevelNdx], VK_IMAGE_LAYOUT_GENERAL);
 
-		imageResidencyViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, *m_logicalDevice, imageResidency, mapImageViewType(m_imageType), mapTextureFormat(m_residencyFormat), mipLevelRange));
+		imageResidencyViews[mipLevelNdx] = makeVkSharedPtr(makeImageView(deviceInterface, getDevice(), imageResidency, mapImageViewType(m_imageType), mapTextureFormat(m_residencyFormat), mipLevelRange));
 		const VkDescriptorImageInfo imageResidencyDescInfo = makeDescriptorImageInfo(DE_NULL, **imageResidencyViews[mipLevelNdx], VK_IMAGE_LAYOUT_GENERAL);
 
 		DescriptorSetUpdateBuilder descriptorUpdateBuilder;
@@ -474,7 +476,7 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 		descriptorUpdateBuilder.writeSingle(descriptorSet, DescriptorSetUpdateBuilder::Location::binding(BINDING_IMAGE_TEXELS), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, &imageTexelsDescInfo);
 		descriptorUpdateBuilder.writeSingle(descriptorSet, DescriptorSetUpdateBuilder::Location::binding(BINDING_IMAGE_RESIDENCY), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, &imageResidencyDescInfo);
 
-		descriptorUpdateBuilder.update(deviceInterface, *m_logicalDevice);
+		descriptorUpdateBuilder.update(deviceInterface, getDevice());
 
 		deviceInterface.cmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, *pipelineLayout, 0u, 1u, &descriptorSet, 0u, DE_NULL);
 
@@ -523,26 +525,16 @@ void SparseShaderIntrinsicsInstanceStorage::recordCommands (vk::Allocator&				al
 class SparseShaderIntrinsicsInstanceFetch : public SparseShaderIntrinsicsInstanceStorage
 {
 public:
-	SparseShaderIntrinsicsInstanceFetch		(Context&					context,
-											 const SpirVFunction		function,
-											 const ImageType			imageType,
-											 const tcu::UVec3&			imageSize,
-											 const tcu::TextureFormat&	format)
-		: SparseShaderIntrinsicsInstanceStorage(context, function, imageType, imageSize, format) {}
+	SparseShaderIntrinsicsInstanceFetch			(Context&					context,
+												 const SpirVFunction		function,
+												 const ImageType			imageType,
+												 const tcu::UVec3&			imageSize,
+												 const tcu::TextureFormat&	format)
+	: SparseShaderIntrinsicsInstanceStorage (context, function, imageType, imageSize, format) {}
 
-	VkImageUsageFlags		imageSparseUsageFlags	(void) const;
-	VkDescriptorType		imageSparseDescType		(void) const;
+	VkImageUsageFlags	imageSparseUsageFlags	(void) const { return VK_IMAGE_USAGE_SAMPLED_BIT; }
+	VkDescriptorType	imageSparseDescType		(void) const { return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE; }
 };
-
-VkImageUsageFlags SparseShaderIntrinsicsInstanceFetch::imageSparseUsageFlags (void) const
-{
-	return VK_IMAGE_USAGE_SAMPLED_BIT;
-}
-
-VkDescriptorType SparseShaderIntrinsicsInstanceFetch::imageSparseDescType (void) const
-{
-	return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-}
 
 TestInstance* SparseCaseOpImageSparseFetch::createInstance (Context& context) const
 {
@@ -552,26 +544,16 @@ TestInstance* SparseCaseOpImageSparseFetch::createInstance (Context& context) co
 class SparseShaderIntrinsicsInstanceRead : public SparseShaderIntrinsicsInstanceStorage
 {
 public:
-	SparseShaderIntrinsicsInstanceRead		(Context&					context,
-											 const SpirVFunction		function,
-											 const ImageType			imageType,
-											 const tcu::UVec3&			imageSize,
-											 const tcu::TextureFormat&	format)
-		: SparseShaderIntrinsicsInstanceStorage(context, function, imageType, imageSize, format) {}
+	SparseShaderIntrinsicsInstanceRead			(Context&					context,
+												 const SpirVFunction		function,
+												 const ImageType			imageType,
+												 const tcu::UVec3&			imageSize,
+												 const tcu::TextureFormat&	format)
+	: SparseShaderIntrinsicsInstanceStorage (context, function, imageType, imageSize, format) {}
 
-	VkImageUsageFlags		imageSparseUsageFlags	(void) const;
-	VkDescriptorType		imageSparseDescType		(void) const;
+	VkImageUsageFlags	imageSparseUsageFlags	(void) const { return VK_IMAGE_USAGE_STORAGE_BIT; }
+	VkDescriptorType	imageSparseDescType		(void) const { return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE; }
 };
-
-VkImageUsageFlags SparseShaderIntrinsicsInstanceRead::imageSparseUsageFlags (void) const
-{
-	return VK_IMAGE_USAGE_STORAGE_BIT;
-}
-
-VkDescriptorType SparseShaderIntrinsicsInstanceRead::imageSparseDescType (void) const
-{
-	return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-}
 
 TestInstance* SparseCaseOpImageSparseRead::createInstance (Context& context) const
 {

@@ -538,8 +538,12 @@ public:
 		return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		if (std::find(context.getDeviceExtensions().begin(), context.getDeviceExtensions().end(), "VK_KHR_maintenance1") == context.getDeviceExtensions().end() ||
+			BUFFER_OP_UPDATE != m_bufferOp)
+			return VK_QUEUE_COMPUTE_BIT | VK_QUEUE_GRAPHICS_BIT;
+
 		return VK_QUEUE_TRANSFER_BIT;
 	}
 
@@ -639,8 +643,9 @@ public:
 		return (m_mode == ACCESS_MODE_READ ? VK_BUFFER_USAGE_TRANSFER_SRC_BIT : VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return VK_QUEUE_TRANSFER_BIT;
 	}
 
@@ -917,8 +922,9 @@ public:
 		return (m_mode == ACCESS_MODE_READ ? VK_BUFFER_USAGE_TRANSFER_SRC_BIT : VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return m_requiredQueueFlags;
 	}
 
@@ -991,7 +997,7 @@ public:
 			pipelineBuilder
 				.setShader	(vk, device, VK_SHADER_STAGE_GEOMETRY_BIT,	context.getBinaryCollection().get(shaderPrefix + "geom"), DE_NULL);
 
-		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass);
+		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass, context.getPipelineCacheData());
 	}
 
 	void recordCommands (OperationContext& context, const VkCommandBuffer cmdBuffer, const VkDescriptorSet descriptorSet)
@@ -1072,7 +1078,7 @@ public:
 		const Unique<VkShaderModule> shaderModule(createShaderModule(vk, device, context.getBinaryCollection().get(shaderPrefix + "comp"), (VkShaderModuleCreateFlags)0));
 
 		m_pipelineLayout = makePipelineLayout(vk, device, descriptorSetLayout);
-		m_pipeline		 = makeComputePipeline(vk, device, *m_pipelineLayout, *shaderModule, DE_NULL);
+		m_pipeline		 = makeComputePipeline(vk, device, *m_pipelineLayout, *shaderModule, DE_NULL, context.getPipelineCacheData());
 	}
 
 	void recordCommands (OperationContext& context, const VkCommandBuffer cmdBuffer, const VkDescriptorSet descriptorSet)
@@ -1347,7 +1353,7 @@ public:
 					VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 					*m_srcImage, m_resource.getImage().subresourceRange);
 
-				vk.cmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_pipelineStage, (VkDependencyFlags)0,
+				vk.cmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, (VkDependencyFlags)0,
 					0u, DE_NULL, 0u, DE_NULL, 1u, &barrier);
 			}
 
@@ -1361,7 +1367,7 @@ public:
 					VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_GENERAL,
 					*m_srcImage, m_resource.getImage().subresourceRange);
 
-				vk.cmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, m_pipelineStage, (VkDependencyFlags)0,
+				vk.cmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, m_pipelineStage, (VkDependencyFlags)0,
 					0u, DE_NULL, 0u, DE_NULL, 1u, &barrier);
 			}
 		}
@@ -1631,8 +1637,9 @@ public:
 		return (m_bufferType == BUFFER_TYPE_UNIFORM ? VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT : VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return (m_stage == VK_SHADER_STAGE_COMPUTE_BIT ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT);
 	}
 
@@ -1706,8 +1713,9 @@ public:
 		return VK_IMAGE_USAGE_STORAGE_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return (m_stage == VK_SHADER_STAGE_COMPUTE_BIT ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT);
 	}
 
@@ -1900,8 +1908,9 @@ public:
 			return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return m_requiredQueueFlags;
 	}
 
@@ -2082,8 +2091,9 @@ public:
 			return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return m_requiredQueueFlags;
 	}
 
@@ -2194,8 +2204,9 @@ public:
 		return VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		if (m_mode == CLEAR_MODE_COLOR)
 			return VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
 		else
@@ -2295,7 +2306,7 @@ public:
 			.setShader						(vk, device, VK_SHADER_STAGE_VERTEX_BIT,	context.getBinaryCollection().get("draw_vert"), DE_NULL)
 			.setShader						(vk, device, VK_SHADER_STAGE_FRAGMENT_BIT,	context.getBinaryCollection().get("draw_frag"), DE_NULL);
 
-		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass);
+		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass, context.getPipelineCacheData());
 
 		// Set expected draw values
 
@@ -2336,7 +2347,7 @@ public:
 			vk.cmdBindVertexBuffers(cmdBuffer, 0u, 1u, &vertexBuffer, &vertexBufferOffset);
 		}
 
-		if (m_drawCall == DRAW_CALL_DRAW_INDEXED || DRAW_CALL_DRAW_INDEXED_INDIRECT)
+		if (m_drawCall == DRAW_CALL_DRAW_INDEXED || m_drawCall == DRAW_CALL_DRAW_INDEXED_INDIRECT)
 			vk.cmdBindIndexBuffer(cmdBuffer, m_vertices.getIndexBuffer(), 0u, m_vertices.getIndexType());
 
 		switch (m_drawCall)
@@ -2464,8 +2475,9 @@ public:
 		return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return VK_QUEUE_GRAPHICS_BIT;
 	}
 
@@ -2693,9 +2705,10 @@ public:
 		return 0u;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
-		return VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT;
+		DE_UNREF(context);
+		return VK_QUEUE_GRAPHICS_BIT;
 	}
 
 	de::MovePtr<Operation> build (OperationContext& context, Resource& resource) const
@@ -2751,7 +2764,7 @@ public:
 			.setShader						(vk, device, VK_SHADER_STAGE_VERTEX_BIT,	context.getBinaryCollection().get(shaderPrefix + "vert"), DE_NULL)
 			.setShader						(vk, device, VK_SHADER_STAGE_FRAGMENT_BIT,	context.getBinaryCollection().get(shaderPrefix + "frag"), DE_NULL);
 
-		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass);
+		m_pipeline = pipelineBuilder.build(vk, device, *m_pipelineLayout, *m_renderPass, context.getPipelineCacheData());
 	}
 
 	void recordCommands (OperationContext& context, const VkCommandBuffer cmdBuffer, const VkDescriptorSet descriptorSet)
@@ -2835,7 +2848,7 @@ public:
 		const Unique<VkShaderModule> shaderModule(createShaderModule(vk, device, context.getBinaryCollection().get(shaderPrefix + "comp"), (VkShaderModuleCreateFlags)0));
 
 		m_pipelineLayout = makePipelineLayout(vk, device, descriptorSetLayout);
-		m_pipeline		 = makeComputePipeline(vk, device, *m_pipelineLayout, *shaderModule, DE_NULL);
+		m_pipeline		 = makeComputePipeline(vk, device, *m_pipelineLayout, *shaderModule, DE_NULL, context.getPipelineCacheData());
 	}
 
 	void recordCommands (OperationContext& context, const VkCommandBuffer cmdBuffer, const VkDescriptorSet descriptorSet)
@@ -3112,8 +3125,9 @@ public:
 		return VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return (m_resourceDesc.type == RESOURCE_TYPE_INDIRECT_BUFFER_DISPATCH ? VK_QUEUE_COMPUTE_BIT : VK_QUEUE_GRAPHICS_BIT);
 	}
 
@@ -3141,8 +3155,9 @@ public:
 		return VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return VK_QUEUE_TRANSFER_BIT;
 	}
 
@@ -3215,7 +3230,7 @@ public:
 			.setVertexInputSingleAttribute	(VK_FORMAT_R32G32B32A32_UINT, tcu::getPixelSize(mapVkFormat(VK_FORMAT_R32G32B32A32_UINT)))
 			.setShader						(vk, device, VK_SHADER_STAGE_VERTEX_BIT,	context.getBinaryCollection().get("input_vert"), DE_NULL)
 			.setShader						(vk, device, VK_SHADER_STAGE_FRAGMENT_BIT,	context.getBinaryCollection().get("input_frag"), DE_NULL)
-			.build							(vk, device, *m_pipelineLayout, *m_renderPass);
+			.build							(vk, device, *m_pipelineLayout, *m_renderPass, context.getPipelineCacheData());
 	}
 
 	void recordCommands (const VkCommandBuffer cmdBuffer)
@@ -3252,6 +3267,10 @@ public:
 		}
 
 		vk.cmdDraw(cmdBuffer, static_cast<deUint32>(dataSizeBytes / sizeof(tcu::UVec4)), 1u, 0u, 0u);
+
+		const VkBufferMemoryBarrier	barrier = makeBufferMemoryBarrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT, **m_outputBuffer, 0u, m_resource.getBuffer().size);
+		vk.cmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_VERTEX_SHADER_BIT, VK_PIPELINE_STAGE_HOST_BIT, (VkDependencyFlags)0, 0u, DE_NULL, 1u, &barrier, 0u, DE_NULL);
+
 		endRenderPass(vk, cmdBuffer);
 	}
 
@@ -3340,8 +3359,9 @@ public:
 		return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
 	}
 
-	VkQueueFlags getQueueFlags (void) const
+	VkQueueFlags getQueueFlags (const OperationContext& context) const
 	{
+		DE_UNREF(context);
 		return VK_QUEUE_GRAPHICS_BIT;
 	}
 
@@ -3358,23 +3378,27 @@ private:
 
 } // anonymous ns
 
-OperationContext::OperationContext (Context& context)
+OperationContext::OperationContext (Context& context, PipelineCacheData& pipelineCacheData)
 	: m_vki					(context.getInstanceInterface())
 	, m_vk					(context.getDeviceInterface())
 	, m_physicalDevice		(context.getPhysicalDevice())
 	, m_device				(context.getDevice())
 	, m_allocator			(context.getDefaultAllocator())
 	, m_progCollection		(context.getBinaryCollection())
+	, m_pipelineCacheData	(pipelineCacheData)
+	, m_deviceExtensions	(context.getDeviceExtensions())
 {
 }
 
-OperationContext::OperationContext (Context& context, const DeviceInterface& vk, const VkDevice device, vk::Allocator& allocator)
+OperationContext::OperationContext (Context& context, PipelineCacheData& pipelineCacheData, const DeviceInterface& vk, const VkDevice device, vk::Allocator& allocator)
 	: m_vki					(context.getInstanceInterface())
 	, m_vk					(vk)
 	, m_physicalDevice		(context.getPhysicalDevice())
 	, m_device				(device)
 	, m_allocator			(allocator)
 	, m_progCollection		(context.getBinaryCollection())
+	, m_pipelineCacheData	(pipelineCacheData)
+	, m_deviceExtensions	(context.getDeviceExtensions())
 {
 }
 

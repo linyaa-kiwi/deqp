@@ -126,7 +126,7 @@
 #endif
 
 /* Endianness */
-#define DE_BIG_ENDIAN 		0
+#define DE_BIG_ENDIAN		0
 #define DE_LITTLE_ENDIAN	1
 
 #if defined(DE_ENDIANNESS)
@@ -330,7 +330,7 @@ DE_INLINE deBool deGetTrue (void) { return DE_TRUE; }
 #define DE_SWAP(TYPE, A, B) do { TYPE _tmp_ = (A); (A) = (B); (B) = _tmp_; } while(deGetFalse())
 
 /** Offset of a struct member. */
-#define DE_OFFSET_OF(STRUCT, MEMBER) ((int)(deUintptr)(deUint8*)&(((STRUCT*)0)->MEMBER))
+#define DE_OFFSET_OF(STRUCT, MEMBER) ((deUint32)(deUintptr)(deUint8*)&(((STRUCT*)0)->MEMBER))
 
 /* Pointer size. */
 #if defined(DE_PTR_SIZE)

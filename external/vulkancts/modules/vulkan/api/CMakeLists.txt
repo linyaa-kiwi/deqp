@@ -33,6 +33,10 @@ set(DEQP_VK_API_SRCS
 	vktApiFillBufferTests.hpp
 	vktApiDescriptorPoolTests.cpp
 	vktApiDescriptorPoolTests.hpp
+	vktApiNullHandleTests.cpp
+	vktApiNullHandleTests.hpp
+	vktApiGranularityTests.cpp
+	vktApiGranularityTests.hpp
 	)
 
 set(DEQP_VK_API_LIBS

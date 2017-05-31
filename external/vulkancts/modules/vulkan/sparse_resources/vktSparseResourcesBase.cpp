@@ -22,8 +22,9 @@
  *//*--------------------------------------------------------------------*/
 
 #include "vktSparseResourcesBase.hpp"
-#include "vktSparseResourcesTestsUtil.hpp"
+#include "vkMemUtil.hpp"
 #include "vkRefUtil.hpp"
+#include "vkTypeUtil.hpp"
 #include "vkQueryUtil.hpp"
 
 using namespace vk;
@@ -32,24 +33,40 @@ namespace vkt
 {
 namespace sparse
 {
+namespace
+{
 
 struct QueueFamilyQueuesCount
 {
-	QueueFamilyQueuesCount() : queueCount(0u), counter(0u) {};
+	QueueFamilyQueuesCount() : queueCount(0u) {};
 
-	deUint32		queueCount;
-	deUint32		counter;
+	deUint32 queueCount;
 };
 
-SparseResourcesBaseInstance::SparseResourcesBaseInstance (Context &context) 
-	: TestInstance(context)
+static const deUint32 NO_MATCH_FOUND = ~0u;
+
+deUint32 findMatchingQueueFamilyIndex (const std::vector<vk::VkQueueFamilyProperties>&	queueFamilyProperties,
+									   const VkQueueFlags								queueFlags,
+									   const deUint32									startIndex)
 {
+	for (deUint32 queueNdx = startIndex; queueNdx < queueFamilyProperties.size(); ++queueNdx)
+	{
+		if ((queueFamilyProperties[queueNdx].queueFlags & queueFlags) == queueFlags)
+			return queueNdx;
+	}
+
+	return NO_MATCH_FOUND;
 }
+
+} // anonymous
 
 void SparseResourcesBaseInstance::createDeviceSupportingQueues(const QueueRequirementsVec& queueRequirements)
 {
+	typedef std::map<vk::VkQueueFlags, std::vector<Queue> >		QueuesMap;
+	typedef std::map<deUint32, QueueFamilyQueuesCount>			SelectedQueuesMap;
+	typedef std::map<deUint32, std::vector<float> >				QueuePrioritiesMap;
+
 	const InstanceInterface&	instance		= m_context.getInstanceInterface();
-	const DeviceInterface&		deviceInterface = m_context.getDeviceInterface();
 	const VkPhysicalDevice		physicalDevice	= m_context.getPhysicalDevice();
 
 	deUint32 queueFamilyPropertiesCount = 0u;
@@ -66,175 +83,98 @@ void SparseResourcesBaseInstance::createDeviceSupportingQueues(const QueueRequir
 	if (queueFamilyPropertiesCount == 0u)
 		TCU_THROW(ResourceError, "Device reports an empty set of queue family properties");
 
-	typedef std::map<deUint32, QueueFamilyQueuesCount>	SelectedQueuesMap;
-	typedef std::map<deUint32, std::vector<float> >		QueuePrioritiesMap;
-
 	SelectedQueuesMap	selectedQueueFamilies;
 	QueuePrioritiesMap	queuePriorities;
 
 	for (deUint32 queueReqNdx = 0; queueReqNdx < queueRequirements.size(); ++queueReqNdx)
 	{
-		const QueueRequirements queueRequirement = queueRequirements[queueReqNdx];
-		const deUint32			queueFamilyIndex = findMatchingQueueFamilyIndex(queueFamilyProperties, queueRequirement.queueFlags);
+		const QueueRequirements& queueRequirement = queueRequirements[queueReqNdx];
 
-		if (queueFamilyIndex == NO_MATCH_FOUND)
-			TCU_THROW(NotSupportedError, "No match found for queue requirements");
+		deUint32 queueFamilyIndex	= 0u;
+		deUint32 queuesFoundCount	= 0u;
 
-		selectedQueueFamilies[queueFamilyIndex].queueCount += queueRequirement.queueCount;
-		for (deUint32 queueNdx = 0; queueNdx < queueRequirement.queueCount; ++queueNdx)
+		do
 		{
-			queuePriorities[queueFamilyIndex].push_back(1.0f);
-		}
+			queueFamilyIndex = findMatchingQueueFamilyIndex(queueFamilyProperties, queueRequirement.queueFlags, queueFamilyIndex);
+
+			if (queueFamilyIndex == NO_MATCH_FOUND)
+				TCU_THROW(NotSupportedError, "No match found for queue requirements");
+
+			const deUint32 queuesPerFamilyCount = deMin32(queueFamilyProperties[queueFamilyIndex].queueCount, queueRequirement.queueCount - queuesFoundCount);
+
+			selectedQueueFamilies[queueFamilyIndex].queueCount = deMax32(queuesPerFamilyCount, selectedQueueFamilies[queueFamilyIndex].queueCount);
+
+			for (deUint32 queueNdx = 0; queueNdx < queuesPerFamilyCount; ++queueNdx)
+			{
+				Queue queue;
+				queue.queueFamilyIndex	= queueFamilyIndex;
+				queue.queueIndex		= queueNdx;
+
+				m_queues[queueRequirement.queueFlags].push_back(queue);
+			}
+
+			queuesFoundCount += queuesPerFamilyCount;
+
+			++queueFamilyIndex;
+		} while (queuesFoundCount < queueRequirement.queueCount);
 	}
 
 	std::vector<VkDeviceQueueCreateInfo> queueInfos;
 
 	for (SelectedQueuesMap::iterator queueFamilyIter = selectedQueueFamilies.begin(); queueFamilyIter != selectedQueueFamilies.end(); ++queueFamilyIter)
 	{
-		VkDeviceQueueCreateInfo queueInfo;
-		deMemset(&queueInfo, 0, sizeof(queueInfo));
+		for (deUint32 queueNdx = 0; queueNdx < queueFamilyIter->second.queueCount; ++queueNdx)
+			queuePriorities[queueFamilyIter->first].push_back(1.0f);
 
-		queueInfo.sType				= VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-		queueInfo.pNext				= DE_NULL;
-		queueInfo.flags				= (VkDeviceQueueCreateFlags)0u;
-		queueInfo.queueFamilyIndex	= queueFamilyIter->first;
-		queueInfo.queueCount		= queueFamilyIter->second.queueCount;
-		queueInfo.pQueuePriorities  = &queuePriorities[queueFamilyIter->first][0];
+		const VkDeviceQueueCreateInfo queueInfo =
+		{
+			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,		// VkStructureType             sType;
+			DE_NULL,										// const void*                 pNext;
+			(VkDeviceQueueCreateFlags)0u,					// VkDeviceQueueCreateFlags    flags;
+			queueFamilyIter->first,							// uint32_t                    queueFamilyIndex;
+			queueFamilyIter->second.queueCount,				// uint32_t                    queueCount;
+			&queuePriorities[queueFamilyIter->first][0],	// const float*                pQueuePriorities;
+		};
 
 		queueInfos.push_back(queueInfo);
 	}
 
-	VkDeviceCreateInfo deviceInfo;
-	deMemset(&deviceInfo, 0, sizeof(deviceInfo));
-
-	VkPhysicalDeviceFeatures deviceFeatures;
-	instance.getPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
-
-	deviceInfo.sType					= VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	deviceInfo.pNext					= DE_NULL;
-	deviceInfo.enabledExtensionCount	= 0u;
-	deviceInfo.ppEnabledExtensionNames	= DE_NULL;
-	deviceInfo.enabledLayerCount		= 0u;
-	deviceInfo.ppEnabledLayerNames		= DE_NULL;
-	deviceInfo.pEnabledFeatures			= &deviceFeatures;
-	deviceInfo.queueCreateInfoCount		= (deUint32)selectedQueueFamilies.size();
-	deviceInfo.pQueueCreateInfos		= &queueInfos[0];
-
-	m_logicalDevice = vk::createDevice(instance, physicalDevice, &deviceInfo);
-
-	for (deUint32 queueReqNdx = 0; queueReqNdx < queueRequirements.size(); ++queueReqNdx)
+	const VkPhysicalDeviceFeatures	deviceFeatures	= getPhysicalDeviceFeatures(instance, physicalDevice);
+	const VkDeviceCreateInfo		deviceInfo		=
 	{
-		const QueueRequirements queueRequirement = queueRequirements[queueReqNdx];
-		const deUint32			queueFamilyIndex = findMatchingQueueFamilyIndex(queueFamilyProperties, queueRequirement.queueFlags);
-
-		if (queueFamilyIndex == NO_MATCH_FOUND)
-			TCU_THROW(NotSupportedError, "No match found for queue requirements");
-
-		for (deUint32 queueNdx = 0; queueNdx < queueRequirement.queueCount; ++queueNdx)
-		{
-			VkQueue	queueHandle = 0;
-			deviceInterface.getDeviceQueue(*m_logicalDevice, queueFamilyIndex, selectedQueueFamilies[queueFamilyIndex].counter++, &queueHandle);
-
-			Queue queue;
-			queue.queueHandle		= queueHandle;
-			queue.queueFamilyIndex	= queueFamilyIndex;
-
-			m_queues[queueRequirement.queueFlags].push_back(queue);
-		}
-	}
-}
-
-const Queue& SparseResourcesBaseInstance::getQueue (const VkQueueFlags queueFlags, const deUint32 queueIndex)
-{
-	return m_queues[queueFlags][queueIndex];
-}
-
-deUint32 SparseResourcesBaseInstance::findMatchingMemoryType (const InstanceInterface&		instance,
-															  const VkPhysicalDevice		physicalDevice,
-															  const VkMemoryRequirements&	objectMemoryRequirements,
-															  const MemoryRequirement&		memoryRequirement) const
-{
-	const VkPhysicalDeviceMemoryProperties deviceMemoryProperties = getPhysicalDeviceMemoryProperties(instance, physicalDevice);
-
-	for (deUint32 memoryTypeNdx = 0; memoryTypeNdx < deviceMemoryProperties.memoryTypeCount; ++memoryTypeNdx)
-	{
-		if ((objectMemoryRequirements.memoryTypeBits & (1u << memoryTypeNdx)) != 0 &&
-			memoryRequirement.matchesHeap(deviceMemoryProperties.memoryTypes[memoryTypeNdx].propertyFlags))
-		{
-			return memoryTypeNdx;
-		}
-	}
-
-	return NO_MATCH_FOUND;
-}
-
-bool SparseResourcesBaseInstance::checkSparseSupportForImageType (const InstanceInterface&	instance,
-																	const VkPhysicalDevice		physicalDevice,
-																	const ImageType				imageType) const
-{
-	const VkPhysicalDeviceFeatures deviceFeatures = getPhysicalDeviceFeatures(instance, physicalDevice);
-
-	if (!deviceFeatures.sparseBinding)
-		return false;
-
-	switch (mapImageType(imageType))
-	{
-		case VK_IMAGE_TYPE_2D:
-			return deviceFeatures.sparseResidencyImage2D == VK_TRUE;
-		case VK_IMAGE_TYPE_3D:
-			return deviceFeatures.sparseResidencyImage3D == VK_TRUE;
-		default:
-			DE_ASSERT(0);
-			return false;
+		VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,		// VkStructureType                    sType;
+		DE_NULL,									// const void*                        pNext;
+		(VkDeviceCreateFlags)0,						// VkDeviceCreateFlags                flags;
+		static_cast<deUint32>(queueInfos.size()),	// uint32_t                           queueCreateInfoCount;
+		&queueInfos[0],								// const VkDeviceQueueCreateInfo*     pQueueCreateInfos;
+		0u,											// uint32_t                           enabledLayerCount;
+		DE_NULL,									// const char* const*                 ppEnabledLayerNames;
+		0u,											// uint32_t                           enabledExtensionCount;
+		DE_NULL,									// const char* const*                 ppEnabledExtensionNames;
+		&deviceFeatures,							// const VkPhysicalDeviceFeatures*    pEnabledFeatures;
 	};
-}
 
-bool SparseResourcesBaseInstance::checkSparseSupportForImageFormat (const InstanceInterface&	instance,
-																	const VkPhysicalDevice		physicalDevice,
-																	const VkImageCreateInfo&	imageInfo) const
-{
-	const std::vector<VkSparseImageFormatProperties> sparseImageFormatPropVec = getPhysicalDeviceSparseImageFormatProperties(
-		instance, physicalDevice, imageInfo.format, imageInfo.imageType, imageInfo.samples, imageInfo.usage, imageInfo.tiling);
+	m_logicalDevice = createDevice(instance, physicalDevice, &deviceInfo);
+	m_deviceDriver	= de::MovePtr<DeviceDriver>(new DeviceDriver(instance, *m_logicalDevice));
+	m_allocator		= de::MovePtr<Allocator>(new SimpleAllocator(*m_deviceDriver, *m_logicalDevice, getPhysicalDeviceMemoryProperties(instance, physicalDevice)));
 
-	return sparseImageFormatPropVec.size() > 0u;
-}
-
-bool SparseResourcesBaseInstance::checkImageFormatFeatureSupport (const vk::InstanceInterface&		instance,
-																  const vk::VkPhysicalDevice		physicalDevice,
-																  const vk::VkFormat				format,
-																  const vk::VkFormatFeatureFlags	featureFlags) const
-{
-	const VkFormatProperties formatProperties = getPhysicalDeviceFormatProperties(instance, physicalDevice, format);
-
-	return (formatProperties.optimalTilingFeatures & featureFlags) == featureFlags;
-}
-
-deUint32 SparseResourcesBaseInstance::getSparseAspectRequirementsIndex (const std::vector<VkSparseImageMemoryRequirements>&	requirements,
-																		const VkImageAspectFlags							aspectFlags) const
-{
-	for (deUint32 memoryReqNdx = 0; memoryReqNdx < requirements.size(); ++memoryReqNdx)
+	for (QueuesMap::iterator queuesIter = m_queues.begin(); queuesIter != m_queues.end(); ++queuesIter)
 	{
-		if (requirements[memoryReqNdx].formatProperties.aspectMask & aspectFlags)
+		for (deUint32 queueNdx = 0u; queueNdx < queuesIter->second.size(); ++queueNdx)
 		{
-			return memoryReqNdx;
+			Queue& queue = queuesIter->second[queueNdx];
+
+			VkQueue	queueHandle = 0;
+			m_deviceDriver->getDeviceQueue(*m_logicalDevice, queue.queueFamilyIndex, queue.queueIndex, &queueHandle);
+
+			queue.queueHandle = queueHandle;
 		}
 	}
-
-	return NO_MATCH_FOUND;
 }
 
-deUint32 SparseResourcesBaseInstance::findMatchingQueueFamilyIndex (const QueueFamilyPropertiesVec& queueFamilyProperties,
-																	const VkQueueFlags				queueFlags)	const
+const Queue& SparseResourcesBaseInstance::getQueue (const VkQueueFlags queueFlags, const deUint32 queueIndex) const
 {
-	for (deUint32 queueNdx = 0; queueNdx < queueFamilyProperties.size(); ++queueNdx)
-	{
-		if ((queueFamilyProperties[queueNdx].queueFlags & queueFlags) == queueFlags)
-		{
-			return queueNdx;
-		}
-	}
-
-	return NO_MATCH_FOUND;
+	return m_queues.find(queueFlags)->second[queueIndex];
 }
 
 } // sparse

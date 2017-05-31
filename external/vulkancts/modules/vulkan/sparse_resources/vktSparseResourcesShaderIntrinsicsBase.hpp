@@ -86,7 +86,9 @@ enum SpirVFunction
 	SPARSE_SPIRV_FUNCTION_TYPE_LAST
 };
 
-std::string getOpTypeImageComponent	(const tcu::TextureFormat& format);
+std::string getOpTypeImageComponent			(const tcu::TextureFormat& format);
+std::string getImageComponentTypeName		(const tcu::TextureFormat& format);
+std::string getImageComponentVec4TypeName	(const tcu::TextureFormat& format);
 
 std::string getOpTypeImageSparse	(const ImageType			imageType,
 									 const tcu::TextureFormat&	format,
@@ -143,8 +145,7 @@ public:
 
 	virtual vk::VkQueueFlags			getQueueFlags			(void) const = 0;
 
-	virtual void						recordCommands			(vk::Allocator&					allocator,
-																 const vk::VkCommandBuffer		commandBuffer,
+	virtual void						recordCommands			(const vk::VkCommandBuffer		commandBuffer,
 																 const vk::VkImageCreateInfo&	imageSparseInfo,
 																 const vk::VkImage				imageSparse,
 																 const vk::VkImage				imageTexels,

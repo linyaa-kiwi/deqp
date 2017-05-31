@@ -45,12 +45,6 @@ struct SourceCollections;
 namespace vkt
 {
 
-enum MatrixLoadFlags
-{
-	LOAD_FULL_MATRIX		= 0,
-	LOAD_MATRIX_COMPONENTS	= 1,
-};
-
 class DefaultDevice;
 
 class Context
@@ -66,11 +60,13 @@ public:
 	vk::ProgramCollection<vk::ProgramBinary>&	getBinaryCollection				(void) const { return m_progCollection;		}
 
 	// Default instance & device, selected with --deqp-vk-device-id=N
+	const std::vector<std::string>&				getInstanceExtensions			(void) const;
 	vk::VkInstance								getInstance						(void) const;
 	const vk::InstanceInterface&				getInstanceInterface			(void) const;
 	vk::VkPhysicalDevice						getPhysicalDevice				(void) const;
 	const vk::VkPhysicalDeviceFeatures&			getDeviceFeatures				(void) const;
 	const vk::VkPhysicalDeviceProperties&		getDeviceProperties				(void) const;
+	const std::vector<std::string>&				getDeviceExtensions				(void) const;
 	vk::VkDevice								getDevice						(void) const;
 	const vk::DeviceInterface&					getDeviceInterface				(void) const;
 	deUint32									getUniversalQueueFamilyIndex	(void) const;

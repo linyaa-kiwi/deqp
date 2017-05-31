@@ -47,8 +47,8 @@ struct qpWatchDog_s
 {
 	qpWatchDogFunc		timeOutFunc;
 	void*				timeOutUserPtr;
-	int					totalTimeLimit;			/* Total test case time limit in seconds 	*/
-	int					intervalTimeLimit;		/* Iteration length limit in seconds 		*/
+	int					totalTimeLimit;			/* Total test case time limit in seconds	*/
+	int					intervalTimeLimit;		/* Iteration length limit in seconds		*/
 
 	volatile deUint64	resetTime;
 	volatile deUint64	lastTouchTime;
@@ -69,11 +69,14 @@ static void watchDogThreadFunc (void* arg)
 		deUint64	curTime					= deGetMicroseconds();
 		int			totalSecondsPassed		= (int)((curTime - dog->resetTime) / 1000000ull);
 		int			secondsSinceLastTouch	= (int)((curTime - dog->lastTouchTime) / 1000000ull);
+		deBool		overIntervalLimit		= secondsSinceLastTouch > dog->intervalTimeLimit;
+		deBool		overTotalLimit			= totalSecondsPassed > dog->totalTimeLimit;
 
-		if ((secondsSinceLastTouch > dog->intervalTimeLimit) || (totalSecondsPassed > dog->totalTimeLimit))
+		if (overIntervalLimit || overTotalLimit)
 		{
+		    qpTimeoutReason reason = overTotalLimit ? QP_TIMEOUT_REASON_TOTAL_LIMIT : QP_TIMEOUT_REASON_INTERVAL_LIMIT;
 			DBGPRINT(("watchDogThreadFunc(): call timeout func\n"));
-			dog->timeOutFunc(dog, dog->timeOutUserPtr);
+			dog->timeOutFunc(dog, dog->timeOutUserPtr, reason);
 			break;
 		}
 

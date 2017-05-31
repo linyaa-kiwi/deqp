@@ -257,36 +257,6 @@ inline deUint32 convertSatRteUint24 (float f)
 	return de::min(rounded, maxUint24);
 }
 
-int getChannelSize (TextureFormat::ChannelType type)
-{
-	// make sure this table is updated if format table is updated
-	DE_STATIC_ASSERT(TextureFormat::CHANNELTYPE_LAST == 38);
-
-	switch (type)
-	{
-		case TextureFormat::SNORM_INT8:			return 1;
-		case TextureFormat::SNORM_INT16:		return 2;
-		case TextureFormat::SNORM_INT32:		return 4;
-		case TextureFormat::UNORM_INT8:			return 1;
-		case TextureFormat::UNORM_INT16:		return 2;
-		case TextureFormat::UNORM_INT24:		return 3;
-		case TextureFormat::UNORM_INT32:		return 4;
-		case TextureFormat::SIGNED_INT8:		return 1;
-		case TextureFormat::SIGNED_INT16:		return 2;
-		case TextureFormat::SIGNED_INT32:		return 4;
-		case TextureFormat::UNSIGNED_INT8:		return 1;
-		case TextureFormat::UNSIGNED_INT16:		return 2;
-		case TextureFormat::UNSIGNED_INT24:		return 3;
-		case TextureFormat::UNSIGNED_INT32:		return 4;
-		case TextureFormat::HALF_FLOAT:			return 2;
-		case TextureFormat::FLOAT:				return 4;
-		case TextureFormat::FLOAT64:			return 8;
-		default:
-			DE_ASSERT(DE_FALSE);
-			return 0;
-	}
-}
-
 inline float channelToFloat (const deUint8* value, TextureFormat::ChannelType type)
 {
 	// make sure this table is updated if format table is updated
@@ -650,6 +620,36 @@ int getNumUsedChannels (TextureFormat::ChannelOrder order)
 		case TextureFormat::D:			return 1;
 		case TextureFormat::S:			return 1;
 		case TextureFormat::DS:			return 2;
+		default:
+			DE_ASSERT(DE_FALSE);
+			return 0;
+	}
+}
+
+int getChannelSize (TextureFormat::ChannelType type)
+{
+	// make sure this table is updated if format table is updated
+	DE_STATIC_ASSERT(TextureFormat::CHANNELTYPE_LAST == 38);
+
+	switch (type)
+	{
+		case TextureFormat::SNORM_INT8:			return 1;
+		case TextureFormat::SNORM_INT16:		return 2;
+		case TextureFormat::SNORM_INT32:		return 4;
+		case TextureFormat::UNORM_INT8:			return 1;
+		case TextureFormat::UNORM_INT16:		return 2;
+		case TextureFormat::UNORM_INT24:		return 3;
+		case TextureFormat::UNORM_INT32:		return 4;
+		case TextureFormat::SIGNED_INT8:		return 1;
+		case TextureFormat::SIGNED_INT16:		return 2;
+		case TextureFormat::SIGNED_INT32:		return 4;
+		case TextureFormat::UNSIGNED_INT8:		return 1;
+		case TextureFormat::UNSIGNED_INT16:		return 2;
+		case TextureFormat::UNSIGNED_INT24:		return 3;
+		case TextureFormat::UNSIGNED_INT32:		return 4;
+		case TextureFormat::HALF_FLOAT:			return 2;
+		case TextureFormat::FLOAT:				return 4;
+		case TextureFormat::FLOAT64:			return 8;
 		default:
 			DE_ASSERT(DE_FALSE);
 			return 0;
@@ -1520,7 +1520,7 @@ static inline int imod (int a, int b)
 
 static inline int mirror (int a)
 {
-	return a >= 0.0f ? a : -(1 + a);
+	return a >= 0 ? a : -(1 + a);
 }
 
 // Nearest-even rounding in case of tie (fractional part 0.5), otherwise ordinary rounding.
@@ -1637,7 +1637,7 @@ static inline Vec4 lookupBorder (const tcu::TextureFormat& format, const tcu::Sa
 	// "lookup" for a combined format does not make sense, disallow
 	DE_ASSERT(!isCombinedDepthStencilType(format.type));
 
-	const tcu::TextureChannelClass	channelClass 			= tcu::getTextureChannelClass(format.type);
+	const tcu::TextureChannelClass	channelClass			= tcu::getTextureChannelClass(format.type);
 	const bool						isFloat					= channelClass == tcu::TEXTURECHANNELCLASS_FLOATING_POINT;
 	const bool						isFixed					= channelClass == tcu::TEXTURECHANNELCLASS_SIGNED_FIXED_POINT ||
 															  channelClass == tcu::TEXTURECHANNELCLASS_UNSIGNED_FIXED_POINT;

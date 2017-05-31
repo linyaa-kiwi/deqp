@@ -24,6 +24,7 @@
 #include "vktPipelineSpecConstantTests.hpp"
 #include "vktTestCase.hpp"
 #include "vktPipelineSpecConstantUtil.hpp"
+#include "vktPipelineMakeUtil.hpp"
 
 #include "tcuTestLog.hpp"
 #include "tcuTexture.hpp"
@@ -515,7 +516,7 @@ tcu::TestStatus ComputeTestInstance::iterate (void)
 			0u, DE_NULL, 1u, &shaderWriteBarrier, 0u, DE_NULL);
 	}
 
-	endCommandBuffer(vk, *cmdBuffer);
+	VK_CHECK(vk.endCommandBuffer(*cmdBuffer));
 	submitCommandsAndWait(vk, device, queue, *cmdBuffer);
 
 	// Verify results
@@ -573,7 +574,7 @@ tcu::TestStatus GraphicsTestInstance::iterate (void)
 	const tcu::IVec2          renderSize    = tcu::IVec2(32, 32);
 	const VkFormat            imageFormat   = VK_FORMAT_R8G8B8A8_UNORM;
 	const Image               colorImage    (vk, device, allocator, makeImageCreateInfo(renderSize, imageFormat, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT), MemoryRequirement::Any);
-	const Unique<VkImageView> colorImageView(makeImageView(vk, device, *colorImage, VK_IMAGE_VIEW_TYPE_2D, imageFormat));
+	const Unique<VkImageView> colorImageView(makeImageView(vk, device, *colorImage, VK_IMAGE_VIEW_TYPE_2D, imageFormat, makeImageSubresourceRange(VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u)));
 
 	// Vertex buffer
 
@@ -620,7 +621,7 @@ tcu::TestStatus GraphicsTestInstance::iterate (void)
 	// Pipeline
 
 	const Unique<VkRenderPass>     renderPass    (makeRenderPass    (vk, device, imageFormat));
-	const Unique<VkFramebuffer>    framebuffer   (makeFramebuffer	(vk, device, *renderPass, *colorImageView, renderSize.x(), renderSize.y()));
+	const Unique<VkFramebuffer>    framebuffer   (makeFramebuffer	(vk, device, *renderPass, 1u, &colorImageView.get(), static_cast<deUint32>(renderSize.x()), static_cast<deUint32>(renderSize.y())));
 	const Unique<VkPipelineLayout> pipelineLayout(makePipelineLayout(vk, device, *descriptorSetLayout));
 	const Unique<VkCommandPool>    cmdPool       (makeCommandPool   (vk, device, queueFamilyIndex));
 	const Unique<VkCommandBuffer>  cmdBuffer     (makeCommandBuffer (vk, device, *cmdPool));
@@ -671,7 +672,7 @@ tcu::TestStatus GraphicsTestInstance::iterate (void)
 	vk.cmdBindVertexBuffers (*cmdBuffer, 0u, 1u, &vertexBuffer.get(), &vertexBufferOffset);
 
 	vk.cmdDraw(*cmdBuffer, numVertices, 1u, 0u, 0u);
-	endRenderPass(vk, *cmdBuffer);
+	vk.cmdEndRenderPass(*cmdBuffer);
 
 	{
 		const VkBufferMemoryBarrier shaderWriteBarrier = makeBufferMemoryBarrier(
@@ -681,7 +682,7 @@ tcu::TestStatus GraphicsTestInstance::iterate (void)
 			0u, DE_NULL, 1u, &shaderWriteBarrier, 0u, DE_NULL);
 	}
 
-	endCommandBuffer(vk, *cmdBuffer);
+	VK_CHECK(vk.endCommandBuffer(*cmdBuffer));
 	submitCommandsAndWait(vk, device, queue, *cmdBuffer);
 
 	// Verify results
@@ -732,7 +733,7 @@ tcu::TestCaseGroup* createDefaultValueTests (tcu::TestContext& testCtx, const Vk
 {
 	de::MovePtr<tcu::TestCaseGroup> testGroup (new tcu::TestCaseGroup(testCtx, "default_value", "use default constant value"));
 
-	static const CaseDefinition defs[] =
+	const CaseDefinition defs[] =
 	{
 		{
 			"bool",
@@ -805,7 +806,7 @@ tcu::TestCaseGroup* createBasicSpecializationTests (tcu::TestContext& testCtx, c
 {
 	de::MovePtr<tcu::TestCaseGroup> testGroup (new tcu::TestCaseGroup(testCtx, "basic", "specialize a constant"));
 
-	static const CaseDefinition defs[] =
+	const CaseDefinition defs[] =
 	{
 		{
 			"bool",
@@ -921,7 +922,7 @@ tcu::TestCaseGroup* createWorkGroupSizeTests (tcu::TestContext& testCtx)
 		"    sb_out.workGroupSize = gl_WorkGroupSize;\n"
 		"    sb_out.checksum      = count;\n";
 
-	static const CaseDefinition defs[] =
+	const CaseDefinition defs[] =
 	{
 		{
 			"x",
@@ -1011,7 +1012,7 @@ tcu::TestCaseGroup* createBuiltInOverrideTests (tcu::TestContext& testCtx, const
 {
 	de::MovePtr<tcu::TestCaseGroup> testGroup (new tcu::TestCaseGroup(testCtx, "builtin", "built-in override"));
 
-	static const CaseDefinition defs[] =
+	const CaseDefinition defs[] =
 	{
 		{
 			"default",
@@ -1046,7 +1047,7 @@ tcu::TestCaseGroup* createExpressionTests (tcu::TestContext& testCtx, const VkSh
 {
 	de::MovePtr<tcu::TestCaseGroup> testGroup (new tcu::TestCaseGroup(testCtx, "expression", "specialization constants usage in expressions"));
 
-	static const CaseDefinition defs[] =
+	const CaseDefinition defs[] =
 	{
 		{
 			"spec_const_expression",
@@ -1785,7 +1786,7 @@ tcu::TestCaseGroup* createSpecConstantTests (tcu::TestContext& testCtx)
 		VkShaderStageFlagBits	stage;
 	};
 
-	static const StageDef stages[] =
+	const StageDef stages[] =
 	{
 		{ graphicsGroup.get(),	"vertex",		VK_SHADER_STAGE_VERTEX_BIT					},
 		{ graphicsGroup.get(),	"fragment",		VK_SHADER_STAGE_FRAGMENT_BIT				},

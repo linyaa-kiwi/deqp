@@ -32,6 +32,7 @@
 #include "deUniquePtr.hpp"
 
 #include "vkDefs.hpp"
+#include "vkRefUtil.hpp"
 #include "vkPrograms.hpp"
 #include "vkRef.hpp"
 #include "vkMemUtil.hpp"
@@ -81,18 +82,29 @@ public:
 		TYPE_LAST
 	};
 
+	enum Init
+	{
+		INIT_UPLOAD_DATA,
+		INIT_CLEAR,
+
+		INIT_LAST
+	};
+
 	struct Parameters
 	{
 		deUint32					baseMipLevel;
 		vk::VkComponentMapping		componentMapping;
 		vk::VkSampleCountFlagBits	samples;
+		Init						initialization;
 
 		Parameters (deUint32					baseMipLevel_		= 0,
 					vk::VkComponentMapping		componentMapping_	= vk::makeComponentMappingRGBA(),
-					vk::VkSampleCountFlagBits	samples_			= vk::VK_SAMPLE_COUNT_1_BIT)
+					vk::VkSampleCountFlagBits	samples_			= vk::VK_SAMPLE_COUNT_1_BIT,
+					Init						initialization_		= INIT_UPLOAD_DATA)
 			: baseMipLevel		(baseMipLevel_)
 			, componentMapping	(componentMapping_)
 			, samples			(samples_)
+			, initialization	(initialization_)
 		{
 		}
 	};
@@ -458,6 +470,8 @@ public:
 																					deUint32				textureId);
 
 	static const tcu::Vec4								getDefaultConstCoords		(void) { return tcu::Vec4(0.125f, 0.25f, 0.5f, 1.0f); }
+	void												setPushConstantRanges		(const deUint32 rangeCount, const vk::VkPushConstantRange* const pcRanges);
+	virtual void										updatePushConstants			(vk::VkCommandBuffer commandBuffer, vk::VkPipelineLayout pipelineLayout);
 
 protected:
 														ShaderRenderCaseInstance	(Context&					context,
@@ -474,6 +488,12 @@ protected:
 	void												render						(deUint32					numVertices,
 																					 deUint32					numTriangles,
 																					 const deUint16*			indices,
+																					 const tcu::Vec4&			constCoords		= getDefaultConstCoords());
+
+	void												render						(deUint32					numVertices,
+																					 deUint32					numIndices,
+																					 const deUint16*			indices,
+																					 vk::VkPrimitiveTopology	topology,
 																					 const tcu::Vec4&			constCoords		= getDefaultConstCoords());
 
 	const tcu::TextureLevel&							getResultImage				(void) const { return m_resultImage; }
@@ -528,6 +548,11 @@ private:
 																					 deUint32						arrayLayers,
 																					 vk::VkImage					destImage);
 
+	void												clearImage					(const tcu::Sampler&			refSampler,
+																					 deUint32						mipLevels,
+																					 deUint32						arrayLayers,
+																					 vk::VkImage					destImage);
+
 	void												checkSparseSupport			(const vk::VkImageType imageType) const;
 
 	void												uploadSparseImage			(const tcu::TextureFormat&		texFormat,
@@ -541,6 +566,7 @@ private:
 
 	void												createSamplerUniform		(deUint32						bindingLocation,
 																					 TextureBinding::Type			textureType,
+																					 TextureBinding::Init			textureInit,
 																					 const tcu::TextureFormat&		texFormat,
 																					 const tcu::UVec3				texSize,
 																					 const TextureData&				textureData,
@@ -618,6 +644,8 @@ private:
 	typedef de::SharedPtr<de::UniquePtr<UniformInfo> >	UniformInfoSp;
 	std::vector<UniformInfoSp>							m_uniformInfos;
 
+	std::vector< de::SharedPtr<vk::Allocation> >		m_allocations;
+
 	std::vector<vk::VkVertexInputBindingDescription>	m_vertexBindingDescription;
 	std::vector<vk::VkVertexInputAttributeDescription>	m_vertexAttributeDescription;
 
@@ -625,6 +653,7 @@ private:
 	std::vector<AllocationSp>							m_vertexBufferAllocs;
 
 	vk::VkSampleCountFlagBits							m_sampleCount;
+	std::vector<vk::VkPushConstantRange>				m_pushConstantRanges;
 
 	// Wrapper functions around m_context calls to support sparse cases.
 	vk::VkDevice										getDevice						(void) const;

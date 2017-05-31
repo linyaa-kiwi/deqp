@@ -47,7 +47,6 @@
 #include "deUniquePtr.hpp"
 #include "tcuStringTemplate.hpp"
 
-#include <cmath>
 #include "vktSpvAsmComputeShaderCase.hpp"
 #include "vktSpvAsmComputeShaderTestUtil.hpp"
 #include "vktTestCaseUtil.hpp"
@@ -256,7 +255,7 @@ struct OpFUnordCase
 	const char*		opCode;
 	compareFuncType	compareFunc;
 
-					OpFUnordCase 			(const char* _name, const char* _opCode, compareFuncType _compareFunc)
+					OpFUnordCase			(const char* _name, const char* _opCode, compareFuncType _compareFunc)
 						: name				(_name)
 						, opCode			(_opCode)
 						, compareFunc		(_compareFunc) {}
@@ -384,7 +383,7 @@ struct OpAtomicCase
 	void			(*calculateExpected)(deInt32&, deInt32);
 	deInt32			numOutputElements;
 
-					OpAtomicCase 			(const char* _name, const char* _assembly, void (*_calculateExpected)(deInt32&, deInt32), deInt32 _numOutputElements)
+					OpAtomicCase			(const char* _name, const char* _assembly, void (*_calculateExpected)(deInt32&, deInt32), deInt32 _numOutputElements)
 						: name				(_name)
 						, assembly			(_assembly)
 						, calculateExpected	(_calculateExpected)
@@ -1935,20 +1934,6 @@ tcu::TestCaseGroup* createBlockOrderGroup (tcu::TestContext& testCtx)
 		"            OpSelectionMerge %if_merge None\n"
 		"            OpBranchConditional %cmp %if_true %if_false\n"
 
-		// Merge block for switch-statement: placed at the beginning.
-		"%switch_merge = OpLabel\n"
-		"                OpBranch %if_merge\n"
-
-		// Case 1 for switch-statement.
-		"%case1    = OpLabel\n"
-		"%x_1      = OpLoad %u32 %xvar\n"
-		"%inloc_1  = OpAccessChain %f32ptr %indata %zero %x_1\n"
-		"%inval_1  = OpLoad %f32 %inloc_1\n"
-		"%addf42   = OpFAdd %f32 %inval_1 %constf42\n"
-		"%outloc_1 = OpAccessChain %f32ptr %outdata %zero %x_1\n"
-		"            OpStore %outloc_1 %addf42\n"
-		"            OpBranch %switch_merge\n"
-
 		// False branch for if-statement: placed in the middle of switch cases and before true branch.
 		"%if_false = OpLabel\n"
 		"%x_f      = OpLoad %u32 %xvar\n"
@@ -1969,6 +1954,22 @@ tcu::TestCaseGroup* createBlockOrderGroup (tcu::TestContext& testCtx)
 		"%mod      = OpUMod %u32 %xval_t %const3\n"
 		"            OpSelectionMerge %switch_merge None\n"
 		"            OpSwitch %mod %default 0 %case0 1 %case1 2 %case2\n"
+
+		// Merge block for switch-statement: placed before the case
+                // bodies.  But it must follow OpSwitch which dominates it.
+		"%switch_merge = OpLabel\n"
+		"                OpBranch %if_merge\n"
+
+		// Case 1 for switch-statement: placed before case 0.
+                // It must follow the OpSwitch that dominates it.
+		"%case1    = OpLabel\n"
+		"%x_1      = OpLoad %u32 %xvar\n"
+		"%inloc_1  = OpAccessChain %f32ptr %indata %zero %x_1\n"
+		"%inval_1  = OpLoad %f32 %inloc_1\n"
+		"%addf42   = OpFAdd %f32 %inval_1 %constf42\n"
+		"%outloc_1 = OpAccessChain %f32ptr %outdata %zero %x_1\n"
+		"            OpStore %outloc_1 %addf42\n"
+		"            OpBranch %switch_merge\n"
 
 		// Case 2 for switch-statement.
 		"%case2    = OpLabel\n"
@@ -2317,10 +2318,18 @@ tcu::TestCaseGroup* createOpConstantNullGroup (tcu::TestContext& testCtx)
 
 		"OpDecorate %id BuiltIn GlobalInvocationId\n"
 
-		+ string(s_InputOutputBufferTraits) + string(s_CommonTypes) + string(s_InputOutputBuffer) +
+		+ string(s_InputOutputBufferTraits) + string(s_CommonTypes) +
+		"%uvec2     = OpTypeVector %u32 2\n"
+		"%bvec3     = OpTypeVector %bool 3\n"
+		"%fvec4     = OpTypeVector %f32 4\n"
+		"%fmat33    = OpTypeMatrix %fvec3 3\n"
+		"%const100  = OpConstant %u32 100\n"
+		"%uarr100   = OpTypeArray %i32 %const100\n"
+		"%struct    = OpTypeStruct %f32 %i32 %u32\n"
+		"%pointer   = OpTypePointer Function %i32\n"
+		+ string(s_InputOutputBuffer) +
 
-		"${TYPE}\n"
-		"%null      = OpConstantNull %type\n"
+		"%null      = OpConstantNull ${TYPE}\n"
 
 		"%id        = OpVariable %uvec3ptr Input\n"
 		"%zero      = OpConstant %i32 0\n"
@@ -2337,18 +2346,17 @@ tcu::TestCaseGroup* createOpConstantNullGroup (tcu::TestContext& testCtx)
 		"             OpReturn\n"
 		"             OpFunctionEnd\n");
 
-	cases.push_back(CaseParameter("bool",			"%type = OpTypeBool"));
-	cases.push_back(CaseParameter("sint32",			"%type = OpTypeInt 32 1"));
-	cases.push_back(CaseParameter("uint32",			"%type = OpTypeInt 32 0"));
-	cases.push_back(CaseParameter("float32",		"%type = OpTypeFloat 32"));
-	cases.push_back(CaseParameter("vec4float32",	"%type = OpTypeVector %f32 4"));
-	cases.push_back(CaseParameter("vec3bool",		"%type = OpTypeVector %bool 3"));
-	cases.push_back(CaseParameter("vec2uint32",		"%type = OpTypeVector %u32 2"));
-	cases.push_back(CaseParameter("matrix",			"%type = OpTypeMatrix %fvec3 3"));
-	cases.push_back(CaseParameter("array",			"%100 = OpConstant %u32 100\n"
-													"%type = OpTypeArray %i32 %100"));
-	cases.push_back(CaseParameter("struct",			"%type = OpTypeStruct %f32 %i32 %u32"));
-	cases.push_back(CaseParameter("pointer",		"%type = OpTypePointer Function %i32"));
+	cases.push_back(CaseParameter("bool",			"%bool"));
+	cases.push_back(CaseParameter("sint32",			"%i32"));
+	cases.push_back(CaseParameter("uint32",			"%u32"));
+	cases.push_back(CaseParameter("float32",		"%f32"));
+	cases.push_back(CaseParameter("vec4float32",	"%fvec4"));
+	cases.push_back(CaseParameter("vec3bool",		"%bvec3"));
+	cases.push_back(CaseParameter("vec2uint32",		"%uvec2"));
+	cases.push_back(CaseParameter("matrix",			"%fmat33"));
+	cases.push_back(CaseParameter("array",			"%uarr100"));
+	cases.push_back(CaseParameter("struct",			"%struct"));
+	cases.push_back(CaseParameter("pointer",		"%pointer"));
 
 	fillRandomScalars(rnd, 1.f, 100.f, &positiveFloats[0], numElements);
 
@@ -2529,7 +2537,7 @@ bool compareNan (const std::vector<BufferSp>&, const vector<AllocationSp>& outpu
 
 	for (size_t idx = 0; idx < expectedOutput->getNumBytes() / sizeof(float); ++idx)
 	{
-		if (!isnan(output_as_float[idx]))
+		if (!deFloatIsNaN(output_as_float[idx]))
 		{
 			return false;
 		}
@@ -3097,7 +3105,7 @@ tcu::TestCaseGroup* createLoopControlGroup (tcu::TestContext& testCtx)
 		"%loop_entry  = OpLabel\n"
 		"%i_val       = OpLoad %u32 %i\n"
 		"%cmp_lt      = OpULessThan %bool %i_val %four\n"
-		"               OpLoopMerge %loop_merge %loop_entry ${CONTROL}\n"
+		"               OpLoopMerge %loop_merge %loop_body ${CONTROL}\n"
 		"               OpBranchConditional %cmp_lt %loop_body %loop_merge\n"
 		"%loop_body   = OpLabel\n"
 		"%outval      = OpLoad %f32 %outloc\n"
@@ -3415,17 +3423,25 @@ tcu::TestCaseGroup* createOpUndefGroup (tcu::TestContext& testCtx)
 
 		"OpDecorate %id BuiltIn GlobalInvocationId\n"
 
-		+ string(s_InputOutputBufferTraits) + string(s_CommonTypes) + string(s_InputOutputBuffer) +
-
-		"${TYPE}\n"
-
+		+ string(s_InputOutputBufferTraits) + string(s_CommonTypes) +
+		"%uvec2     = OpTypeVector %u32 2\n"
+		"%fvec4     = OpTypeVector %f32 4\n"
+		"%fmat33    = OpTypeMatrix %fvec3 3\n"
+		"%image     = OpTypeImage %f32 2D 0 0 0 1 Unknown\n"
+		"%sampler   = OpTypeSampler\n"
+		"%simage    = OpTypeSampledImage %image\n"
+		"%const100  = OpConstant %u32 100\n"
+		"%uarr100   = OpTypeArray %i32 %const100\n"
+		"%struct    = OpTypeStruct %f32 %i32 %u32\n"
+		"%pointer   = OpTypePointer Function %i32\n"
+		+ string(s_InputOutputBuffer) +
 		"%id        = OpVariable %uvec3ptr Input\n"
 		"%zero      = OpConstant %i32 0\n"
 
 		"%main      = OpFunction %void None %voidf\n"
 		"%label     = OpLabel\n"
 
-		"%undef     = OpUndef %type\n"
+		"%undef     = OpUndef ${TYPE}\n"
 
 		"%idval     = OpLoad %uvec3 %id\n"
 		"%x         = OpCompositeExtract %u32 %idval 0\n"
@@ -3438,22 +3454,20 @@ tcu::TestCaseGroup* createOpUndefGroup (tcu::TestContext& testCtx)
 		"             OpReturn\n"
 		"             OpFunctionEnd\n");
 
-	cases.push_back(CaseParameter("bool",			"%type = OpTypeBool"));
-	cases.push_back(CaseParameter("sint32",			"%type = OpTypeInt 32 1"));
-	cases.push_back(CaseParameter("uint32",			"%type = OpTypeInt 32 0"));
-	cases.push_back(CaseParameter("float32",		"%type = OpTypeFloat 32"));
-	cases.push_back(CaseParameter("vec4float32",	"%type = OpTypeVector %f32 4"));
-	cases.push_back(CaseParameter("vec2uint32",		"%type = OpTypeVector %u32 2"));
-	cases.push_back(CaseParameter("matrix",			"%type = OpTypeMatrix %fvec3 3"));
-	cases.push_back(CaseParameter("image",			"%type = OpTypeImage %f32 2D 0 0 0 1 Unknown"));
-	cases.push_back(CaseParameter("sampler",		"%type = OpTypeSampler"));
-	cases.push_back(CaseParameter("sampledimage",	"%img = OpTypeImage %f32 2D 0 0 0 1 Unknown\n"
-													"%type = OpTypeSampledImage %img"));
-	cases.push_back(CaseParameter("array",			"%100 = OpConstant %u32 100\n"
-													"%type = OpTypeArray %i32 %100"));
-	cases.push_back(CaseParameter("runtimearray",	"%type = OpTypeRuntimeArray %f32"));
-	cases.push_back(CaseParameter("struct",			"%type = OpTypeStruct %f32 %i32 %u32"));
-	cases.push_back(CaseParameter("pointer",		"%type = OpTypePointer Function %i32"));
+	cases.push_back(CaseParameter("bool",			"%bool"));
+	cases.push_back(CaseParameter("sint32",			"%i32"));
+	cases.push_back(CaseParameter("uint32",			"%u32"));
+	cases.push_back(CaseParameter("float32",		"%f32"));
+	cases.push_back(CaseParameter("vec4float32",	"%fvec4"));
+	cases.push_back(CaseParameter("vec2uint32",		"%uvec2"));
+	cases.push_back(CaseParameter("matrix",			"%fmat33"));
+	cases.push_back(CaseParameter("image",			"%image"));
+	cases.push_back(CaseParameter("sampler",		"%sampler"));
+	cases.push_back(CaseParameter("sampledimage",	"%simage"));
+	cases.push_back(CaseParameter("array",			"%uarr100"));
+	cases.push_back(CaseParameter("runtimearray",	"%f32arr"));
+	cases.push_back(CaseParameter("struct",			"%struct"));
+	cases.push_back(CaseParameter("pointer",		"%pointer"));
 
 	fillRandomScalars(rnd, 1.f, 100.f, &positiveFloats[0], numElements);
 
@@ -4269,6 +4283,8 @@ void createCombinedModule(vk::SourceCollections& dst, InstanceContext)
 		"OpExecutionMode %tessc_main OutputVertices 3\n"
 
 		"OpExecutionMode %tesse_main Triangles\n"
+		"OpExecutionMode %tesse_main SpacingEqual\n"
+		"OpExecutionMode %tesse_main VertexOrderCcw\n"
 
 		"OpExecutionMode %frag_main OriginUpperLeft\n"
 
@@ -4480,9 +4496,9 @@ void createCombinedModule(vk::SourceCollections& dst, InstanceContext)
 		"%tesse_in_pos_0 = OpLoad %v4f32 %tesse_in_pos_0_ptr\n"
 		"%tesse_in_pos_1 = OpLoad %v4f32 %tesse_in_pos_1_ptr\n"
 		"%tesse_in_pos_2 = OpLoad %v4f32 %tesse_in_pos_2_ptr\n"
-		"%tesse_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_0 %tesse_in_pos_0\n"
-		"%tesse_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_1 %tesse_in_pos_1\n"
-		"%tesse_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_2 %tesse_in_pos_2\n"
+		"%tesse_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse_in_pos_0 %tesse_tc_0\n"
+		"%tesse_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse_in_pos_1 %tesse_tc_1\n"
+		"%tesse_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse_in_pos_2 %tesse_tc_2\n"
 		"%tesse_out_pos_ptr = OpAccessChain %op_v4f32 %tesse_stream %c_i32_0\n"
 		"%tesse_in_pos_0_plus_pos_1 = OpFAdd %v4f32 %tesse_in_pos_0_weighted %tesse_in_pos_1_weighted\n"
 		"%tesse_computed_out = OpFAdd %v4f32 %tesse_in_pos_0_plus_pos_1 %tesse_in_pos_2_weighted\n"
@@ -4493,9 +4509,9 @@ void createCombinedModule(vk::SourceCollections& dst, InstanceContext)
 		"%tesse_in_clr_0 = OpLoad %v4f32 %tesse_in_clr_0_ptr\n"
 		"%tesse_in_clr_1 = OpLoad %v4f32 %tesse_in_clr_1_ptr\n"
 		"%tesse_in_clr_2 = OpLoad %v4f32 %tesse_in_clr_2_ptr\n"
-		"%tesse_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_0 %tesse_in_clr_0\n"
-		"%tesse_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_1 %tesse_in_clr_1\n"
-		"%tesse_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse_tc_2 %tesse_in_clr_2\n"
+		"%tesse_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse_in_clr_0 %tesse_tc_0\n"
+		"%tesse_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse_in_clr_1 %tesse_tc_1\n"
+		"%tesse_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse_in_clr_2 %tesse_tc_2\n"
 		"%tesse_in_clr_0_plus_col_1 = OpFAdd %v4f32 %tesse_in_clr_0_weighted %tesse_in_clr_1_weighted\n"
 		"%tesse_computed_clr = OpFAdd %v4f32 %tesse_in_clr_0_plus_col_1 %tesse_in_clr_2_weighted\n"
 		"OpStore %tesse_out_color %tesse_computed_clr\n"
@@ -4815,7 +4831,11 @@ void createMultipleEntries(vk::SourceCollections& dst, InstanceContext)
 		"OpEntryPoint TessellationEvaluation %tesse1_main \"tesse1\" %stream %gl_tessCoord %in_position %out_color %in_color \n"
 		"OpEntryPoint TessellationEvaluation %tesse2_main \"tesse2\" %stream %gl_tessCoord %in_position %out_color %in_color \n"
 		"OpExecutionMode %tesse1_main Triangles\n"
+		"OpExecutionMode %tesse1_main SpacingEqual\n"
+		"OpExecutionMode %tesse1_main VertexOrderCcw\n"
 		"OpExecutionMode %tesse2_main Triangles\n"
+		"OpExecutionMode %tesse2_main SpacingEqual\n"
+		"OpExecutionMode %tesse2_main VertexOrderCcw\n"
 		"OpName %tesse1_main \"tesse1\"\n"
 		"OpName %tesse2_main \"tesse2\"\n"
 		"OpName %per_vertex_out \"gl_PerVertex\"\n"
@@ -4863,9 +4883,9 @@ void createMultipleEntries(vk::SourceCollections& dst, InstanceContext)
 		"%tesse1_in_pos_0 = OpLoad %v4f32 %tesse1_in_pos_0_ptr\n"
 		"%tesse1_in_pos_1 = OpLoad %v4f32 %tesse1_in_pos_1_ptr\n"
 		"%tesse1_in_pos_2 = OpLoad %v4f32 %tesse1_in_pos_2_ptr\n"
-		"%tesse1_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_0 %tesse1_in_pos_0\n"
-		"%tesse1_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_1 %tesse1_in_pos_1\n"
-		"%tesse1_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_2 %tesse1_in_pos_2\n"
+		"%tesse1_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_pos_0 %tesse1_tc_0\n"
+		"%tesse1_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_pos_1 %tesse1_tc_1\n"
+		"%tesse1_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_pos_2 %tesse1_tc_2\n"
 		"%tesse1_out_pos_ptr = OpAccessChain %op_v4f32 %stream %c_i32_0\n"
 		"%tesse1_in_pos_0_plus_pos_1 = OpFAdd %v4f32 %tesse1_in_pos_0_weighted %tesse1_in_pos_1_weighted\n"
 		"%tesse1_computed_out = OpFAdd %v4f32 %tesse1_in_pos_0_plus_pos_1 %tesse1_in_pos_2_weighted\n"
@@ -4876,9 +4896,9 @@ void createMultipleEntries(vk::SourceCollections& dst, InstanceContext)
 		"%tesse1_in_clr_0 = OpLoad %v4f32 %tesse1_in_clr_0_ptr\n"
 		"%tesse1_in_clr_1 = OpLoad %v4f32 %tesse1_in_clr_1_ptr\n"
 		"%tesse1_in_clr_2 = OpLoad %v4f32 %tesse1_in_clr_2_ptr\n"
-		"%tesse1_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_0 %tesse1_in_clr_0\n"
-		"%tesse1_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_1 %tesse1_in_clr_1\n"
-		"%tesse1_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse1_tc_2 %tesse1_in_clr_2\n"
+		"%tesse1_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_clr_0 %tesse1_tc_0\n"
+		"%tesse1_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_clr_1 %tesse1_tc_1\n"
+		"%tesse1_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse1_in_clr_2 %tesse1_tc_2\n"
 		"%tesse1_in_clr_0_plus_col_1 = OpFAdd %v4f32 %tesse1_in_clr_0_weighted %tesse1_in_clr_1_weighted\n"
 		"%tesse1_computed_clr = OpFAdd %v4f32 %tesse1_in_clr_0_plus_col_1 %tesse1_in_clr_2_weighted\n"
 		"OpStore %out_color %tesse1_computed_clr\n"
@@ -4899,9 +4919,9 @@ void createMultipleEntries(vk::SourceCollections& dst, InstanceContext)
 		"%tesse2_in_pos_0 = OpLoad %v4f32 %tesse2_in_pos_0_ptr\n"
 		"%tesse2_in_pos_1 = OpLoad %v4f32 %tesse2_in_pos_1_ptr\n"
 		"%tesse2_in_pos_2 = OpLoad %v4f32 %tesse2_in_pos_2_ptr\n"
-		"%tesse2_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_0 %tesse2_in_pos_0\n"
-		"%tesse2_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_1 %tesse2_in_pos_1\n"
-		"%tesse2_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_2 %tesse2_in_pos_2\n"
+		"%tesse2_in_pos_0_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_pos_0 %tesse2_tc_0\n"
+		"%tesse2_in_pos_1_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_pos_1 %tesse2_tc_1\n"
+		"%tesse2_in_pos_2_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_pos_2 %tesse2_tc_2\n"
 		"%tesse2_out_pos_ptr = OpAccessChain %op_v4f32 %stream %c_i32_0\n"
 		"%tesse2_in_pos_0_plus_pos_1 = OpFAdd %v4f32 %tesse2_in_pos_0_weighted %tesse2_in_pos_1_weighted\n"
 		"%tesse2_computed_out = OpFAdd %v4f32 %tesse2_in_pos_0_plus_pos_1 %tesse2_in_pos_2_weighted\n"
@@ -4912,9 +4932,9 @@ void createMultipleEntries(vk::SourceCollections& dst, InstanceContext)
 		"%tesse2_in_clr_0 = OpLoad %v4f32 %tesse2_in_clr_0_ptr\n"
 		"%tesse2_in_clr_1 = OpLoad %v4f32 %tesse2_in_clr_1_ptr\n"
 		"%tesse2_in_clr_2 = OpLoad %v4f32 %tesse2_in_clr_2_ptr\n"
-		"%tesse2_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_0 %tesse2_in_clr_0\n"
-		"%tesse2_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_1 %tesse2_in_clr_1\n"
-		"%tesse2_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse2_tc_2 %tesse2_in_clr_2\n"
+		"%tesse2_in_clr_0_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_clr_0 %tesse2_tc_0\n"
+		"%tesse2_in_clr_1_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_clr_1 %tesse2_tc_1\n"
+		"%tesse2_in_clr_2_weighted = OpVectorTimesScalar %v4f32 %tesse2_in_clr_2 %tesse2_tc_2\n"
 		"%tesse2_in_clr_0_plus_col_1 = OpFAdd %v4f32 %tesse2_in_clr_0_weighted %tesse2_in_clr_1_weighted\n"
 		"%tesse2_computed_clr = OpFAdd %v4f32 %tesse2_in_clr_0_plus_col_1 %tesse2_in_clr_2_weighted\n"
 		"%tesse2_clr_transformed = OpFSub %v4f32 %cval %tesse2_computed_clr\n"
@@ -6125,7 +6145,7 @@ tcu::TestCaseGroup* createSelectionBlockOrderTests(tcu::TestContext& testCtx)
 		"%loop      = OpLabel\n"
 		"%ival      = OpLoad %i32 %iptr\n"
 		"%lt_4      = OpSLessThan %bool %ival %c_i32_4\n"
-		"             OpLoopMerge %exit %loop None\n"
+		"             OpLoopMerge %exit %if_entry None\n"
 		"             OpBranchConditional %lt_4 %if_entry %exit\n"
 
 		// Merge block for loop.
@@ -6217,7 +6237,7 @@ tcu::TestCaseGroup* createSwitchBlockOrderTests(tcu::TestContext& testCtx)
 		"%loop      = OpLabel\n"
 		"%ival      = OpLoad %i32 %iptr\n"
 		"%lt_4      = OpSLessThan %bool %ival %c_i32_4\n"
-		"             OpLoopMerge %exit %loop None\n"
+		"             OpLoopMerge %exit %switch_exit None\n"
 		"             OpBranchConditional %lt_4 %switch_entry %exit\n"
 
 		// Merge block for loop.
@@ -6647,7 +6667,7 @@ tcu::TestCaseGroup* createOpPhiTests(tcu::TestContext& testCtx)
 		"%loop      = OpLabel\n"
 		"%ival      = OpLoad %i32 %iptr\n"
 		"%lt_4      = OpSLessThan %bool %ival %c_i32_4\n"
-		"             OpLoopMerge %exit %loop None\n"
+		"             OpLoopMerge %exit %phi None\n"
 		"             OpBranchConditional %lt_4 %entry %exit\n"
 
 		"%entry     = OpLabel\n"
@@ -6943,29 +6963,29 @@ tcu::TestCaseGroup* createOpUndefTests(tcu::TestContext& testCtx)
 	getDefaultColors(defaultColors);
 
 	// First, simple cases that don't do anything with the OpUndef result.
-	fragments["testfun"] =
-		"%test_code = OpFunction %v4f32 None %v4f32_function\n"
-		"%param1 = OpFunctionParameter %v4f32\n"
-		"%label_testfun = OpLabel\n"
-		"%undef = OpUndef %type\n"
-		"OpReturnValue %param1\n"
-		"OpFunctionEnd\n"
-		;
-	struct NameCodePair { string name, code; };
+	struct NameCodePair { string name, decl, type; };
 	const NameCodePair tests[] =
 	{
-		{"bool", "%type = OpTypeBool"},
-		{"vec2uint32", "%type = OpTypeVector %u32 2"},
-		{"image", "%type = OpTypeImage %f32 2D 0 0 0 1 Unknown"},
-		{"sampler", "%type = OpTypeSampler"},
-		{"sampledimage", "%img = OpTypeImage %f32 2D 0 0 0 1 Unknown\n" "%type = OpTypeSampledImage %img"},
-		{"pointer", "%type = OpTypePointer Function %i32"},
-		{"runtimearray", "%type = OpTypeRuntimeArray %f32"},
-		{"array", "%c_u32_100 = OpConstant %u32 100\n" "%type = OpTypeArray %i32 %c_u32_100"},
-		{"struct", "%type = OpTypeStruct %f32 %i32 %u32"}};
+		{"bool", "", "%bool"},
+		{"vec2uint32", "%type = OpTypeVector %u32 2", "%type"},
+		{"image", "%type = OpTypeImage %f32 2D 0 0 0 1 Unknown", "%type"},
+		{"sampler", "%type = OpTypeSampler", "%type"},
+		{"sampledimage", "%img = OpTypeImage %f32 2D 0 0 0 1 Unknown\n" "%type = OpTypeSampledImage %img", "%type"},
+		{"pointer", "", "%fp_i32"},
+		{"runtimearray", "%type = OpTypeRuntimeArray %f32", "%type"},
+		{"array", "%c_u32_100 = OpConstant %u32 100\n" "%type = OpTypeArray %i32 %c_u32_100", "%type"},
+		{"struct", "%type = OpTypeStruct %f32 %i32 %u32", "%type"}};
 	for (size_t testNdx = 0; testNdx < sizeof(tests) / sizeof(NameCodePair); ++testNdx)
 	{
-		fragments["pre_main"] = tests[testNdx].code;
+		fragments["undef_type"] = tests[testNdx].type;
+		fragments["testfun"] = StringTemplate(
+			"%test_code = OpFunction %v4f32 None %v4f32_function\n"
+			"%param1 = OpFunctionParameter %v4f32\n"
+			"%label_testfun = OpLabel\n"
+			"%undef = OpUndef ${undef_type}\n"
+			"OpReturnValue %param1\n"
+			"OpFunctionEnd\n").specialize(fragments);
+		fragments["pre_main"] = tests[testNdx].decl;
 		createTestsForAllStages(tests[testNdx].name, defaultColors, defaultColors, fragments, opUndefTests.get());
 	}
 	fragments.clear();
@@ -8564,9 +8584,9 @@ struct AssemblyStructInfo
 const string specializeInBoundsShaderTemplate (const NumberType type, const AssemblyStructInfo& structInfo, const map<string, string>& params)
 {
 	// Create the full index string
-	string 				fullIndex	= numberToString(structInfo.index) + " " + params.at("indexes");
+	string				fullIndex	= numberToString(structInfo.index) + " " + params.at("indexes");
 	// Convert it to list of indexes
-	vector<string> 		indexes		= de::splitString(fullIndex, ' ');
+	vector<string>		indexes		= de::splitString(fullIndex, ' ');
 
 	map<string, string>	parameters	(params);
 	parameters["typeDeclaration"]	= getAssemblyTypeDeclaration(type);
@@ -8646,6 +8666,7 @@ const string specializeInBoundsShaderTemplate (const NumberType type, const Asse
 		"%zero      = OpConstant %u32 0\n"
 		"%main      = OpFunction %void None %voidf\n"
 		"%label     = OpLabel\n"
+		"%struct_v  = OpVariable %struct_p Function\n"
 		"%idval     = OpLoad %uvec3 %id\n"
 		"%x         = OpCompositeExtract %u32 %idval 0\n"
 		// Create the input/output type
@@ -8660,7 +8681,6 @@ const string specializeInBoundsShaderTemplate (const NumberType type, const Asse
 		// Insert the value
 		"%comp_obj  = OpCompositeInsert %struct_t %inval %struct ${insertIndexes}\n"
 		// Store the object
-		"%struct_v  = OpVariable %struct_p Function\n"
 		"             OpStore %struct_v %comp_obj\n"
 		// Get deepest possible composite pointer
 		"%inner_ptr = OpInBoundsAccessChain %composite_p %struct_v${accessChainIndexes}\n"
@@ -8733,6 +8753,195 @@ tcu::TestCaseGroup* createOpInBoundsAccessChainGroup (tcu::TestContext& testCtx)
 	return group.release();
 }
 
+// If the params missing, uninitialized case
+const string specializeDefaultOutputShaderTemplate (const NumberType type, const map<string, string>& params = map<string, string>())
+{
+	map<string, string> parameters(params);
+
+	parameters["typeDeclaration"] = getAssemblyTypeDeclaration(type);
+
+	// Declare the const value, and use it in the initializer
+	if (params.find("constValue") != params.end())
+	{
+		parameters["constDeclaration"]		= "%const      = OpConstant %in_type " + params.at("constValue") + "\n";
+		parameters["variableInitializer"]	= "%const";
+	}
+	// Uninitialized case
+	else
+	{
+		parameters["constDeclaration"]		= "";
+		parameters["variableInitializer"]	= "";
+	}
+
+	return StringTemplate(
+		"OpCapability Shader\n"
+		"OpMemoryModel Logical GLSL450\n"
+		"OpEntryPoint GLCompute %main \"main\" %id\n"
+		"OpExecutionMode %main LocalSize 1 1 1\n"
+		"OpSource GLSL 430\n"
+		"OpName %main           \"main\"\n"
+		"OpName %id             \"gl_GlobalInvocationID\"\n"
+		// Decorators
+		"OpDecorate %id BuiltIn GlobalInvocationId\n"
+		"OpDecorate %indata DescriptorSet 0\n"
+		"OpDecorate %indata Binding 0\n"
+		"OpDecorate %outdata DescriptorSet 0\n"
+		"OpDecorate %outdata Binding 1\n"
+		"OpDecorate %in_arr ArrayStride 4\n"
+		"OpDecorate %in_buf BufferBlock\n"
+		"OpMemberDecorate %in_buf 0 Offset 0\n"
+		// Base types
+		"%void       = OpTypeVoid\n"
+		"%voidf      = OpTypeFunction %void\n"
+		"%u32        = OpTypeInt 32 0\n"
+		"%i32        = OpTypeInt 32 1\n"
+		"%uvec3      = OpTypeVector %u32 3\n"
+		"%uvec3ptr   = OpTypePointer Input %uvec3\n"
+		// Custom types
+		"%in_type    = ${typeDeclaration}\n"
+		// "%const      = OpConstant %in_type ${constValue}\n"
+		"${constDeclaration}\n"
+		// Derived types
+		"%in_ptr     = OpTypePointer Uniform %in_type\n"
+		"%in_arr     = OpTypeRuntimeArray %in_type\n"
+		"%in_buf     = OpTypeStruct %in_arr\n"
+		"%in_bufptr  = OpTypePointer Uniform %in_buf\n"
+		"%indata     = OpVariable %in_bufptr Uniform\n"
+		"%outdata    = OpVariable %in_bufptr Uniform\n"
+		"%id         = OpVariable %uvec3ptr Input\n"
+		"%var_ptr    = OpTypePointer Function %in_type\n"
+		// Constants
+		"%zero       = OpConstant %i32 0\n"
+		// Main function
+		"%main       = OpFunction %void None %voidf\n"
+		"%label      = OpLabel\n"
+		"%out_var    = OpVariable %var_ptr Function ${variableInitializer}\n"
+		"%idval      = OpLoad %uvec3 %id\n"
+		"%x          = OpCompositeExtract %u32 %idval 0\n"
+		"%inloc      = OpAccessChain %in_ptr %indata %zero %x\n"
+		"%outloc     = OpAccessChain %in_ptr %outdata %zero %x\n"
+
+		"%outval     = OpLoad %in_type %out_var\n"
+		"              OpStore %outloc %outval\n"
+		"              OpReturn\n"
+		"              OpFunctionEnd\n"
+	).specialize(parameters);
+}
+
+bool compareFloats (const std::vector<BufferSp>&, const vector<AllocationSp>& outputAllocs, const std::vector<BufferSp>& expectedOutputs, TestLog& log)
+{
+	DE_ASSERT(outputAllocs.size() != 0);
+	DE_ASSERT(outputAllocs.size() == expectedOutputs.size());
+
+	// Use custom epsilon because of the float->string conversion
+	const float	epsilon	= 0.00001f;
+
+	for (size_t outputNdx = 0; outputNdx < outputAllocs.size(); ++outputNdx)
+	{
+		float expected;
+		memcpy(&expected, expectedOutputs[outputNdx]->data(), expectedOutputs[outputNdx]->getNumBytes());
+
+		float actual;
+		memcpy(&actual, outputAllocs[outputNdx]->getHostPtr(), expectedOutputs[outputNdx]->getNumBytes());
+
+		// Test with epsilon
+		if (fabs(expected - actual) > epsilon)
+		{
+			log << TestLog::Message << "Error: The actual and expected values not matching."
+				<< " Expected: " << expected << " Actual: " << actual << " Epsilon: " << epsilon << TestLog::EndMessage;
+			return false;
+		}
+	}
+	return true;
+}
+
+// Checks if the driver crash with uninitialized cases
+bool passthruVerify (const std::vector<BufferSp>&, const vector<AllocationSp>& outputAllocs, const std::vector<BufferSp>& expectedOutputs, TestLog&)
+{
+	DE_ASSERT(outputAllocs.size() != 0);
+	DE_ASSERT(outputAllocs.size() == expectedOutputs.size());
+
+	// Copy and discard the result.
+	for (size_t outputNdx = 0; outputNdx < outputAllocs.size(); ++outputNdx)
+	{
+		size_t width = expectedOutputs[outputNdx]->getNumBytes();
+
+		vector<char> data(width);
+		memcpy(&data[0], outputAllocs[outputNdx]->getHostPtr(), width);
+	}
+	return true;
+}
+
+tcu::TestCaseGroup* createShaderDefaultOutputGroup (tcu::TestContext& testCtx)
+{
+	de::MovePtr<tcu::TestCaseGroup>	group	(new tcu::TestCaseGroup(testCtx, "shader_default_output", "Test shader default output."));
+	de::Random						rnd		(deStringHash(group->getName()));
+
+	for (int type = TYPE_INT; type != TYPE_END; ++type)
+	{
+		NumberType						numberType	= NumberType(type);
+		const string					typeName	= getNumberTypeName(numberType);
+		const string					description	= "Test the OpVariable initializer with " + typeName + ".";
+		de::MovePtr<tcu::TestCaseGroup>	subGroup	(new tcu::TestCaseGroup(testCtx, typeName.c_str(), description.c_str()));
+
+		// 2 similar subcases (initialized and uninitialized)
+		for (int subCase = 0; subCase < 2; ++subCase)
+		{
+			ComputeShaderSpec spec;
+			spec.numWorkGroups = IVec3(1, 1, 1);
+
+			map<string, string>				params;
+
+			switch (numberType)
+			{
+				case TYPE_INT:
+				{
+					deInt32 number = getInt(rnd);
+					spec.inputs.push_back(createCompositeBuffer<deInt32>(number));
+					spec.outputs.push_back(createCompositeBuffer<deInt32>(number));
+					params["constValue"] = numberToString(number);
+					break;
+				}
+				case TYPE_UINT:
+				{
+					deUint32 number = rnd.getUint32();
+					spec.inputs.push_back(createCompositeBuffer<deUint32>(number));
+					spec.outputs.push_back(createCompositeBuffer<deUint32>(number));
+					params["constValue"] = numberToString(number);
+					break;
+				}
+				case TYPE_FLOAT:
+				{
+					float number = rnd.getFloat();
+					spec.inputs.push_back(createCompositeBuffer<float>(number));
+					spec.outputs.push_back(createCompositeBuffer<float>(number));
+					spec.verifyIO = &compareFloats;
+					params["constValue"] = numberToString(number);
+					break;
+				}
+				default:
+					DE_ASSERT(false);
+			}
+
+			// Initialized subcase
+			if (!subCase)
+			{
+				spec.assembly = specializeDefaultOutputShaderTemplate(numberType, params);
+				subGroup->addChild(new SpvAsmComputeShaderCase(testCtx, "initialized", "OpVariable initializer tests.", spec));
+			}
+			// Uninitialized subcase
+			else
+			{
+				spec.assembly = specializeDefaultOutputShaderTemplate(numberType);
+				spec.verifyIO = &passthruVerify;
+				subGroup->addChild(new SpvAsmComputeShaderCase(testCtx, "uninitialized", "OpVariable initializer tests.", spec));
+			}
+		}
+		group->addChild(subGroup.release());
+	}
+	return group.release();
+}
+
 tcu::TestCaseGroup* createInstructionTests (tcu::TestContext& testCtx)
 {
 	de::MovePtr<tcu::TestCaseGroup> instructionTests	(new tcu::TestCaseGroup(testCtx, "instruction", "Instructions with special opcodes/operands"));
@@ -8769,6 +8978,7 @@ tcu::TestCaseGroup* createInstructionTests (tcu::TestContext& testCtx)
 	computeTests->addChild(createUConvertTests(testCtx));
 	computeTests->addChild(createOpCompositeInsertGroup(testCtx));
 	computeTests->addChild(createOpInBoundsAccessChainGroup(testCtx));
+	computeTests->addChild(createShaderDefaultOutputGroup(testCtx));
 
 	RGBA defaultColors[4];
 	getDefaultColors(defaultColors);
