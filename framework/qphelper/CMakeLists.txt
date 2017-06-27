@@ -49,7 +49,7 @@ elseif (EXISTS "${CMAKE_SOURCE_DIR}/.git")
 	if (PYTHON_EXECUTABLE)
 		message(STATUS "Using git revision as release identifier")
 
-		execute_process(COMMAND git rev-parse --git-dir
+		execute_process(COMMAND git rev-parse --absolute-git-dir
 						WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 						OUTPUT_VARIABLE DE_GIT_DIR
 						OUTPUT_STRIP_TRAILING_WHITESPACE)
