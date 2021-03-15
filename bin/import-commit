@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -eu
+set -o pipefail
+
+script_name="${BASH_SOURCE%%*/}"
+
+
+if [[ "$#" -ne 1 ]]; then
+    echo >&2 "usage: $script_name <commit>"
+    exit 1
+fi
+
+commit="$1"
+
+check_dirty_untracked() {
+    local n
+
+    n="$(
+        git status \
+            --porcelain \
+            --untracked-files \
+            --ignore-submodules=none \
+        | wc -l
+    )"
+
+    if [[ "$n" -ne 0 ]]; then
+        echo >&2 "git tree has dirty or untracked files"
+        exit 1
+    fi
+}
+
+add_file() {
+    local src="$1"
+    local dst="$commit/$2"
+
+    mkdir -p -- "$(dirname -- "$dst")"
+    git cat-file -p "${commit}:${src}" > "$dst"
+    git add -- "$dst"
+}
+
+check_dirty_untracked
+add_file external/vulkancts/mustpass/master/vk-default.txt mustpass/vk-default.txt
+add_file android/cts/master/vk-master.txt android/vk-master.txt
+git commit --no-edit -m "Add '$commit'"
