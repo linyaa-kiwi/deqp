@@ -12,23 +12,20 @@ fi
 
 commit="$1"
 
-check_dirty_untracked() {
-    local n
-
-    n="$(
-        git status \
-            --porcelain \
-            --untracked-files \
-            --ignore-submodules=none \
-            mustpass \
-        | wc -l
-    )"
-
-    if [[ "$n" -ne 0 ]]; then
-        echo >&2 "git tree has dirty or untracked files"
-        exit 1
-    fi
+tree_status() {
+    git status \
+        --porcelain \
+        --untracked-files=normal \
+        --ignore-submodules=none \
+        mustpass
 }
+
+tree_is_clean() {
+    local n
+    n="$(tree_status | wc -l)"
+    [[ "$n" -eq 0 ]]
+}
+
 
 add_file() {
     local src="$1"
@@ -39,9 +36,21 @@ add_file() {
     git add -- "$dst"
 }
 
-check_dirty_untracked
+if ! tree_is_clean; then
+    echo >&2 "error: ./mustpass is not clean"
+    echo >&2 "git status:"
+    tree_status >&2
+    exit 1
+fi
+
 add_file external/vulkancts/mustpass/master/vk-default.txt
 add_file android/cts/master/vk-master.txt
 add_file external/vulkancts/mustpass/master/vk-default.txt
 add_file android/cts/master/vk-master.txt
+
+if tree_is_clean; then
+    echo >&2 "skip: no changes"
+    exit 0
+fi
+
 git commit --no-edit -m "Add '$commit'"
