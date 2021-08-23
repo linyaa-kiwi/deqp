@@ -32,7 +32,7 @@ check_dirty_untracked() {
 
 add_file() {
     local src="$1"
-    local dst="$commit/$2"
+    local dst="$commit/${1#external\/}"
 
     mkdir -p -- "$(dirname -- "$dst")"
     git cat-file -p "${commit}:${src}" > "$dst"
@@ -40,6 +40,8 @@ add_file() {
 }
 
 check_dirty_untracked
-add_file external/vulkancts/mustpass/master/vk-default.txt mustpass/vk-default.txt
-add_file android/cts/master/vk-master.txt android/vk-master.txt
+add_file external/vulkancts/mustpass/master/vk-default.txt
+add_file android/cts/master/vk-master.txt
+add_file external/vulkancts/mustpass/master/vk-default.txt
+add_file android/cts/master/vk-master.txt
 git commit --no-edit -m "Add '$commit'"
