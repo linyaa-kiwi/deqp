@@ -2,6 +2,7 @@
 
 set -eu
 set -o pipefail
+shopt -s extglob
 
 script_name="${BASH_SOURCE%%*/}"
 
@@ -36,6 +37,26 @@ add_file() {
     git add -- "$dst"
 }
 
+add_tree() {
+    local src_dir="$1"
+    local dst_dir="mustpass/$commit/${1#external\/}"
+
+    local src_tree
+    src_tree="$(git rev-parse "${commit}:${src_dir}")"
+
+    (
+        # FIXME: Improve performance by using the default index
+        local index0="index.0"
+        export GIT_INDEX_FILE="$index0"
+        git read-tree --empty
+        git read-tree --prefix="$dst_dir" "$src_tree"
+        git checkout-index -af
+        rm -f "$index0"
+    )
+
+    git add "$dst_dir"
+}
+
 if ! tree_is_clean; then
     echo >&2 "error: ./mustpass is not clean"
     echo >&2 "git status:"
@@ -43,10 +64,8 @@ if ! tree_is_clean; then
     exit 1
 fi
 
-add_file external/vulkancts/mustpass/master/vk-default.txt
-add_file android/cts/master/vk-master.txt
-add_file external/vulkancts/mustpass/master/vk-default.txt
-add_file android/cts/master/vk-master.txt
+add_tree android/cts/master
+add_tree external/vulkancts/mustpass
 
 if tree_is_clean; then
     echo >&2 "skip: no changes"
