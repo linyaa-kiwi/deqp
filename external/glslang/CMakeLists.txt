@@ -31,7 +31,7 @@ if (EXISTS ${GLSLANG_ABS_PATH}/glslang/GenericCodeGen/CodeGen.cpp)
 	set(CMAKE_C_FLAGS	${DE_3RD_PARTY_C_FLAGS})
 	set(CMAKE_CXX_FLAGS	${DE_3RD_PARTY_CXX_FLAGS})
 
-	add_subdirectory(${GLSLANG_ABS_PATH})
+	add_subdirectory(${GLSLANG_ABS_PATH} src)
 
 	add_definitions(-DENABLE_HLSL)
 
