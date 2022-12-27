@@ -328,7 +328,6 @@ virtual void				cmdSetRasterizerDiscardEnable					(VkCommandBuffer commandBuffer
 virtual void				cmdSetDepthBiasEnable							(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const;
 virtual void				cmdSetLogicOpEXT								(VkCommandBuffer commandBuffer, VkLogicOp logicOp) const;
 virtual void				cmdSetPrimitiveRestartEnable					(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) const;
-virtual VkResult			createPrivateDataSlot							(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const;
 virtual void				cmdSetTessellationDomainOriginEXT				(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) const;
 virtual void				cmdSetDepthClampEnableEXT						(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) const;
 virtual void				cmdSetPolygonModeEXT							(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) const;
@@ -360,6 +359,7 @@ virtual void				cmdSetCoverageModulationTableNV					(VkCommandBuffer commandBuff
 virtual void				cmdSetShadingRateImageEnableNV					(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) const;
 virtual void				cmdSetCoverageReductionModeNV					(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode) const;
 virtual void				cmdSetRepresentativeFragmentTestEnableNV		(VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable) const;
+virtual VkResult			createPrivateDataSlot							(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const;
 virtual void				destroyPrivateDataSlot							(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) const;
 virtual VkResult			setPrivateData									(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) const;
 virtual void				getPrivateData									(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) const;

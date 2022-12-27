@@ -1400,6 +1400,7 @@ std::ostream&	operator<<	(std::ostream& s, const VkAccelerationStructureTriangle
 std::ostream&	operator<<	(std::ostream& s, const VkPipelinePropertiesIdentifierEXT& value);
 std::ostream&	operator<<	(std::ostream& s, const VkPhysicalDevicePipelinePropertiesFeaturesEXT& value);
 std::ostream&	operator<<	(std::ostream& s, const VkPhysicalDeviceShaderEarlyAndLateFragmentTestsFeaturesAMD& value);
+std::ostream&	operator<<	(std::ostream& s, const VkExternalMemoryAcquireUnmodifiedEXT& value);
 std::ostream&	operator<<	(std::ostream& s, const VkExportMetalObjectCreateInfoEXT& value);
 std::ostream&	operator<<	(std::ostream& s, const VkExportMetalObjectsInfoEXT& value);
 std::ostream&	operator<<	(std::ostream& s, const VkExportMetalDeviceInfoEXT& value);

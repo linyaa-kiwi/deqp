@@ -2124,6 +2124,7 @@ const char* getStructureTypeName (VkStructureType value)
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM:						return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_FEATURES_QCOM";
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM:					return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_PROCESSING_PROPERTIES_QCOM";
 		case VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM:							return "VK_STRUCTURE_TYPE_IMAGE_VIEW_SAMPLE_WEIGHT_CREATE_INFO_QCOM";
+		case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT:								return "VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_ACQUIRE_UNMODIFIED_EXT";
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT:				return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT";
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT:				return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT";
 		case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT:					return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBPASS_MERGE_FEEDBACK_FEATURES_EXT";
@@ -15157,6 +15158,16 @@ std::ostream& operator<< (std::ostream& s, const VkPhysicalDeviceShaderEarlyAndL
 	return s;
 }
 
+std::ostream& operator<< (std::ostream& s, const VkExternalMemoryAcquireUnmodifiedEXT& value)
+{
+	s << "VkExternalMemoryAcquireUnmodifiedEXT = {\n";
+	s << "\tsType = " << value.sType << '\n';
+	s << "\tpNext = " << value.pNext << '\n';
+	s << "\tacquireUnmodifiedMemory = " << value.acquireUnmodifiedMemory << '\n';
+	s << '}';
+	return s;
+}
+
 std::ostream& operator<< (std::ostream& s, const VkExportMetalObjectCreateInfoEXT& value)
 {
 	s << "VkExportMetalObjectCreateInfoEXT = {\n";
@@ -15624,6 +15635,7 @@ std::ostream& operator<< (std::ostream& s, const VkPhysicalDeviceShaderCoreBuilt
 	s << "VkPhysicalDeviceShaderCoreBuiltinsPropertiesARM = {\n";
 	s << "\tsType = " << value.sType << '\n';
 	s << "\tpNext = " << value.pNext << '\n';
+	s << "\tshaderCoreMask = " << value.shaderCoreMask << '\n';
 	s << "\tshaderCoreCount = " << value.shaderCoreCount << '\n';
 	s << "\tshaderWarpsPerCore = " << value.shaderWarpsPerCore << '\n';
 	s << '}';

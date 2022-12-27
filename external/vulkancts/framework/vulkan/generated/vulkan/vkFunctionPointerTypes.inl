@@ -476,8 +476,6 @@ typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetDepthBiasEnableEXTFunc)										
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetLogicOpEXTFunc)													(VkCommandBuffer commandBuffer, VkLogicOp logicOp);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetPrimitiveRestartEnableFunc)										(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetPrimitiveRestartEnableEXTFunc)									(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable);
-typedef VKAPI_ATTR VkResult				(VKAPI_CALL* CreatePrivateDataSlotFunc)												(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot);
-typedef VKAPI_ATTR VkResult				(VKAPI_CALL* CreatePrivateDataSlotEXTFunc)											(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetTessellationDomainOriginEXTFunc)									(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetDepthClampEnableEXTFunc)											(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetPolygonModeEXTFunc)												(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode);
@@ -509,6 +507,8 @@ typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetCoverageModulationTableNVFunc)			
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetShadingRateImageEnableNVFunc)									(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetCoverageReductionModeNVFunc)										(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode);
 typedef VKAPI_ATTR void					(VKAPI_CALL* CmdSetRepresentativeFragmentTestEnableNVFunc)							(VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable);
+typedef VKAPI_ATTR VkResult				(VKAPI_CALL* CreatePrivateDataSlotFunc)												(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot);
+typedef VKAPI_ATTR VkResult				(VKAPI_CALL* CreatePrivateDataSlotEXTFunc)											(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot);
 typedef VKAPI_ATTR void					(VKAPI_CALL* DestroyPrivateDataSlotFunc)											(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator);
 typedef VKAPI_ATTR void					(VKAPI_CALL* DestroyPrivateDataSlotEXTFunc)											(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator);
 typedef VKAPI_ATTR VkResult				(VKAPI_CALL* SetPrivateDataFunc)													(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data);

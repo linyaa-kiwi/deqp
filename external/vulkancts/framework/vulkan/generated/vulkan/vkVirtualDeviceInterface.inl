@@ -328,7 +328,6 @@ virtual void				cmdSetRasterizerDiscardEnable					(VkCommandBuffer commandBuffer
 virtual void				cmdSetDepthBiasEnable							(VkCommandBuffer commandBuffer, VkBool32 depthBiasEnable) const = 0;
 virtual void				cmdSetLogicOpEXT								(VkCommandBuffer commandBuffer, VkLogicOp logicOp) const = 0;
 virtual void				cmdSetPrimitiveRestartEnable					(VkCommandBuffer commandBuffer, VkBool32 primitiveRestartEnable) const = 0;
-virtual VkResult			createPrivateDataSlot							(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const = 0;
 virtual void				cmdSetTessellationDomainOriginEXT				(VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) const = 0;
 virtual void				cmdSetDepthClampEnableEXT						(VkCommandBuffer commandBuffer, VkBool32 depthClampEnable) const = 0;
 virtual void				cmdSetPolygonModeEXT							(VkCommandBuffer commandBuffer, VkPolygonMode polygonMode) const = 0;
@@ -360,6 +359,7 @@ virtual void				cmdSetCoverageModulationTableNV					(VkCommandBuffer commandBuff
 virtual void				cmdSetShadingRateImageEnableNV					(VkCommandBuffer commandBuffer, VkBool32 shadingRateImageEnable) const = 0;
 virtual void				cmdSetCoverageReductionModeNV					(VkCommandBuffer commandBuffer, VkCoverageReductionModeNV coverageReductionMode) const = 0;
 virtual void				cmdSetRepresentativeFragmentTestEnableNV		(VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable) const = 0;
+virtual VkResult			createPrivateDataSlot							(VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const = 0;
 virtual void				destroyPrivateDataSlot							(VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) const = 0;
 virtual VkResult			setPrivateData									(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t data) const = 0;
 virtual void				getPrivateData									(VkDevice device, VkObjectType objectType, uint64_t objectHandle, VkPrivateDataSlot privateDataSlot, uint64_t* pData) const = 0;

@@ -1629,11 +1629,6 @@ void DeviceDriver::cmdSetPrimitiveRestartEnable (VkCommandBuffer commandBuffer, 
 	m_vk.cmdSetPrimitiveRestartEnable(commandBuffer, primitiveRestartEnable);
 }
 
-VkResult DeviceDriver::createPrivateDataSlot (VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const
-{
-	return m_vk.createPrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
-}
-
 void DeviceDriver::cmdSetTessellationDomainOriginEXT (VkCommandBuffer commandBuffer, VkTessellationDomainOrigin domainOrigin) const
 {
 	m_vk.cmdSetTessellationDomainOriginEXT(commandBuffer, domainOrigin);
@@ -1787,6 +1782,11 @@ void DeviceDriver::cmdSetCoverageReductionModeNV (VkCommandBuffer commandBuffer,
 void DeviceDriver::cmdSetRepresentativeFragmentTestEnableNV (VkCommandBuffer commandBuffer, VkBool32 representativeFragmentTestEnable) const
 {
 	m_vk.cmdSetRepresentativeFragmentTestEnableNV(commandBuffer, representativeFragmentTestEnable);
+}
+
+VkResult DeviceDriver::createPrivateDataSlot (VkDevice device, const VkPrivateDataSlotCreateInfo* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkPrivateDataSlot* pPrivateDataSlot) const
+{
+	return m_vk.createPrivateDataSlot(device, pCreateInfo, pAllocator, pPrivateDataSlot);
 }
 
 void DeviceDriver::destroyPrivateDataSlot (VkDevice device, VkPrivateDataSlot privateDataSlot, const VkAllocationCallbacks* pAllocator) const

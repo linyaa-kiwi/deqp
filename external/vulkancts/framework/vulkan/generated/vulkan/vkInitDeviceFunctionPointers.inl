@@ -428,9 +428,6 @@ m_vk.cmdSetLogicOpEXT									= (CmdSetLogicOpEXTFunc)								GET_PROC_ADDR("vkC
 m_vk.cmdSetPrimitiveRestartEnable						= (CmdSetPrimitiveRestartEnableFunc)					GET_PROC_ADDR("vkCmdSetPrimitiveRestartEnable");
 if (!m_vk.cmdSetPrimitiveRestartEnable)
 	m_vk.cmdSetPrimitiveRestartEnable					= (CmdSetPrimitiveRestartEnableFunc)					GET_PROC_ADDR("vkCmdSetPrimitiveRestartEnableEXT");
-m_vk.createPrivateDataSlot								= (CreatePrivateDataSlotFunc)							GET_PROC_ADDR("vkCreatePrivateDataSlot");
-if (!m_vk.createPrivateDataSlot)
-	m_vk.createPrivateDataSlot							= (CreatePrivateDataSlotFunc)							GET_PROC_ADDR("vkCreatePrivateDataSlotEXT");
 m_vk.cmdSetTessellationDomainOriginEXT					= (CmdSetTessellationDomainOriginEXTFunc)				GET_PROC_ADDR("vkCmdSetTessellationDomainOriginEXT");
 m_vk.cmdSetDepthClampEnableEXT							= (CmdSetDepthClampEnableEXTFunc)						GET_PROC_ADDR("vkCmdSetDepthClampEnableEXT");
 m_vk.cmdSetPolygonModeEXT								= (CmdSetPolygonModeEXTFunc)							GET_PROC_ADDR("vkCmdSetPolygonModeEXT");
@@ -462,6 +459,9 @@ m_vk.cmdSetCoverageModulationTableNV					= (CmdSetCoverageModulationTableNVFunc)
 m_vk.cmdSetShadingRateImageEnableNV						= (CmdSetShadingRateImageEnableNVFunc)					GET_PROC_ADDR("vkCmdSetShadingRateImageEnableNV");
 m_vk.cmdSetCoverageReductionModeNV						= (CmdSetCoverageReductionModeNVFunc)					GET_PROC_ADDR("vkCmdSetCoverageReductionModeNV");
 m_vk.cmdSetRepresentativeFragmentTestEnableNV			= (CmdSetRepresentativeFragmentTestEnableNVFunc)		GET_PROC_ADDR("vkCmdSetRepresentativeFragmentTestEnableNV");
+m_vk.createPrivateDataSlot								= (CreatePrivateDataSlotFunc)							GET_PROC_ADDR("vkCreatePrivateDataSlot");
+if (!m_vk.createPrivateDataSlot)
+	m_vk.createPrivateDataSlot							= (CreatePrivateDataSlotFunc)							GET_PROC_ADDR("vkCreatePrivateDataSlotEXT");
 m_vk.destroyPrivateDataSlot								= (DestroyPrivateDataSlotFunc)							GET_PROC_ADDR("vkDestroyPrivateDataSlot");
 if (!m_vk.destroyPrivateDataSlot)
 	m_vk.destroyPrivateDataSlot							= (DestroyPrivateDataSlotFunc)							GET_PROC_ADDR("vkDestroyPrivateDataSlotEXT");
