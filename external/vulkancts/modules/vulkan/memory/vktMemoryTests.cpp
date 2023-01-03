@@ -27,6 +27,7 @@
 #include "vktMemoryPipelineBarrierTests.hpp"
 #include "vktMemoryRequirementsTests.hpp"
 #include "vktMemoryBindingTests.hpp"
+#include "vktMemoryExternalMemoryAcquireUnmodifiedTests.hpp"
 #include "vktMemoryExternalMemoryHostTests.hpp"
 #include "vktTestGroupUtil.hpp"
 #ifndef CTS_USES_VULKANSC
@@ -49,17 +50,18 @@ void createChildren (tcu::TestCaseGroup* memoryTests)
 #ifndef CTS_USES_VULKANSC
 	// In Vulkan SC subsequent tests allocate memory but do not make it free, because vkFreeMemory was removed.
 	// As a consequence - random memory allocation tests start to report ResourceError ( VK_ERROR_OUT_OF_*_MEMORY )
-	memoryTests->addChild(createAllocationTests					(testCtx));
-	memoryTests->addChild(createDeviceGroupAllocationTests		(testCtx));
-	memoryTests->addChild(createPageableAllocationTests			(testCtx));
-	memoryTests->addChild(createMappingTests					(testCtx));
-	memoryTests->addChild(createPipelineBarrierTests			(testCtx));
+	memoryTests->addChild(createAllocationTests							(testCtx));
+	memoryTests->addChild(createDeviceGroupAllocationTests				(testCtx));
+	memoryTests->addChild(createPageableAllocationTests					(testCtx));
+	memoryTests->addChild(createMappingTests							(testCtx));
+	memoryTests->addChild(createPipelineBarrierTests					(testCtx));
 #endif // CTS_USES_VULKANSC
-	memoryTests->addChild(createRequirementsTests				(testCtx));
-	memoryTests->addChild(createMemoryBindingTests				(testCtx));
-	memoryTests->addChild(createMemoryExternalMemoryHostTests	(testCtx));
+	memoryTests->addChild(createRequirementsTests						(testCtx));
+	memoryTests->addChild(createMemoryBindingTests						(testCtx));
+	memoryTests->addChild(createMemoryExternalMemoryHostTests			(testCtx));
+	memoryTests->addChild(createExternalMemoryAcquireUnmodifiedTests	(testCtx));
 #ifndef CTS_USES_VULKANSC
-	memoryTests->addChild(createDeviceMemoryReportTests			(testCtx));
+	memoryTests->addChild(createDeviceMemoryReportTests					(testCtx));
 #endif
 }
 

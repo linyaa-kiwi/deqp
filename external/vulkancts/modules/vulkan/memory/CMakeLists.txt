@@ -19,6 +19,8 @@ set(DEQP_VK_VKSC_MEMORY_SRCS
 	vktMemoryBindingTests.hpp
 	vktMemoryExternalMemoryHostTests.cpp
 	vktMemoryExternalMemoryHostTests.hpp
+	vktMemoryExternalMemoryAcquireUnmodifiedTests.cpp
+	vktMemoryExternalMemoryAcquireUnmodifiedTests.hpp
 	)
 
 set(DEQP_VK_MEMORY_SRCS
